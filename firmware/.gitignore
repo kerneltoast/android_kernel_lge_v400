@@ -3,6 +3,4 @@
 *.csp
 *.dsp
 ihex2fw
-atmel/*.ihex
-melfas/*/*.txt.ihex
-synaptics/*/*.ihex
+*.fw

@@ -10,6 +10,7 @@
  * GNU General Public License for more details.
  */
 
+
 #include <linux/init.h>
 #include <linux/err.h>
 #include <linux/module.h>
@@ -36,7 +37,6 @@
 
 #include "msm-pcm-q6-v2.h"
 #include "msm-pcm-routing-v2.h"
-
 
 static struct audio_locks the_locks;
 

@@ -2947,14 +2947,6 @@ done_calculating:
 	get_current_time(&chip->last_recalc_time);
 	chip->first_time_calc_soc = 0;
 	chip->first_time_calc_uuc = 0;
-
-    printk("New_cal_SOC = %d, SOC = %d, batt_temp = %d, rbatt = %d, fcc_uah = %d, ocv_charge_uah = %d, uuc_uah = %d, cc_uah = %d, iavg_ua = %d\n",
-			new_calculated_soc, soc, batt_temp, params.rbatt_mohm, params.fcc_uah, params.ocv_charge_uah, params.uuc_uah, params.cc_uah, params.iavg_ua);
-#if defined (CONFIG_MACH_MSM8226_E7WIFI) || defined (CONFIG_MACH_MSM8226_E8WIFI) || \
-    defined (CONFIG_MACH_MSM8926_E8LTE) || defined (CONFIG_MACH_MSM8226_E9WIFI) || \
-    defined (CONFIG_MACH_MSM8226_E9WIFIN) || defined (CONFIG_MACH_MSM8926_E9LTE)
-	printk("calculated_soc = %d, report_soc = %d, vbat = %d, ", chip->calculated_soc, chip->rescale_soc, chip->vbat_uv);
-#endif
 	return chip->calculated_soc;
 }
 

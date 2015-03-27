@@ -5752,7 +5752,7 @@ static int nl80211_tdls_mgmt(struct sk_buff *skb, struct genl_info *info)
 		    nla_get_u32(info->attrs[NL80211_ATTR_TDLS_PEER_CAPABILITY]);
 
 	return rdev->ops->tdls_mgmt(&rdev->wiphy, dev, peer, action_code,
-				    dialog_token, status_code, peer_capability,
+				    dialog_token, status_code,
 				    nla_data(info->attrs[NL80211_ATTR_IE]),
 				    nla_len(info->attrs[NL80211_ATTR_IE]));
 }

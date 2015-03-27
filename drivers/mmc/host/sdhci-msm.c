@@ -2646,9 +2646,6 @@ static void sdhci_msm_disable_data_xfer(struct sdhci_host *host)
 	u32 value;
 	int ret;
 	u32 version;
-#ifdef CONFIG_MACH_MSM8926_X5_SPR
-	int i;
-#endif
 
 	version = readl_relaxed(msm_host->core_mem + CORE_MCI_VERSION);
 	/* Core version 3.1.0 doesn't need this workaround */
@@ -2667,20 +2664,6 @@ static void sdhci_msm_disable_data_xfer(struct sdhci_host *host)
 			+ CORE_SDCC_DEBUG_REG, value,
 			!(value & CORE_DEBUG_REG_AHB_HTRANS),
 			CORE_AHB_DATA_DELAY_US, 1);
-#ifdef CONFIG_MACH_MSM8926_X5_SPR
-	if(ret){
-		for(i=0; i<500; i++){
-			pr_err("%s: %s: can't stop ongoing AHB bus access by ADMA. retry : %d\n",
-					mmc_hostname(host->mmc), __func__, i);
-			ret = readl_poll_timeout_noirq(msm_host->core_mem
-				+ CORE_SDCC_DEBUG_REG, value,
-				!(value & CORE_DEBUG_REG_AHB_HTRANS),
-				CORE_AHB_DATA_DELAY_US, 1);
-			if(!ret)
-				break;
-		}
-	}			 
-#endif 
 	if (ret) {
 		pr_err("%s: %s: can't stop ongoing AHB bus access by ADMA\n",
 				mmc_hostname(host->mmc), __func__);
@@ -2706,10 +2689,6 @@ static struct sdhci_ops sdhci_msm_ops = {
 	.disable_data_xfer = sdhci_msm_disable_data_xfer,
 	.enable_controller_clock = sdhci_msm_enable_controller_clock,
 };
-
-#ifdef CONFIG_LGE_ENABLE_MMC_STRENGTH_CONTROL
-	struct sdhci_msm_host *mmc_control_mmchost = NULL;
-#endif
 
 static int sdhci_msm_cfg_mpm_pin_wakeup(struct sdhci_host *host, unsigned mode)
 {
@@ -3036,10 +3015,6 @@ static int __devinit sdhci_msm_probe(struct platform_device *pdev)
 
 	init_completion(&msm_host->pwr_irq_completion);
 
-#ifdef CONFIG_LGE_ENABLE_MMC_STRENGTH_CONTROL
-	if(msm_host->mmc->index == 1)
-		mmc_control_mmchost = msm_host ;
-#endif
 	if (gpio_is_valid(msm_host->pdata->status_gpio)) {
 		ret = mmc_cd_gpio_request(msm_host->mmc,
 				msm_host->pdata->status_gpio);
@@ -3049,10 +3024,6 @@ static int __devinit sdhci_msm_probe(struct platform_device *pdev)
 			goto vreg_deinit;
 		}
 	}
-
-    #ifdef CONFIG_MACH_LGE
-	irq_set_irq_wake(host->mmc->hotplug.irq, 1);
-    #endif
 
 	if (dma_supported(mmc_dev(host->mmc), DMA_BIT_MASK(32))) {
 		host->dma_mask = DMA_BIT_MASK(32);

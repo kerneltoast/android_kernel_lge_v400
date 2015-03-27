@@ -782,10 +782,6 @@ static enum flash_area fwu_go_nogo(void)
 	firmware_id[3] = 0;
 	deviceFirmwareID = extract_uint(firmware_id);
 
-/*           
-                                                 
-                                                   
-                                   */
 	/* .img firmware id */
 	if (img->is_contain_build_info) {
 		dev_err(&i2c_client->dev,
@@ -831,11 +827,7 @@ static enum flash_area fwu_go_nogo(void)
 	if (imageFirmwareID > deviceFirmwareID) {
 		flash_area = UI_FIRMWARE;
 		goto exit;
-/*           
-                                      
-                                                            
-                                   */
-	} else if (imageFirmwareID <= deviceFirmwareID) {
+	} else if (imageFirmwareID < deviceFirmwareID) {
 		flash_area = NONE;
 		dev_info(&i2c_client->dev,
 			"%s: Img fw is older than device fw. Skip fw update.\n",
@@ -2309,7 +2301,6 @@ static void __exit rmi4_fw_update_module_exit(void)
 module_init(rmi4_fw_update_module_init);
 module_exit(rmi4_fw_update_module_exit);
 
-MODULE_FIRMWARE("synaptics/PR1237618-DS4.3.5.0.16.img");
 MODULE_AUTHOR("Synaptics, Inc.");
 MODULE_DESCRIPTION("RMI4 FW Update Module");
 MODULE_LICENSE("GPL v2");

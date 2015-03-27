@@ -46,11 +46,6 @@
 #include "smd_private.h"
 
 static int enable_debug;
-
-/* START : subsys_modem_restart : testmode */
-extern bool ignore_errors_by_subsys_modem_restart;
-/* END : subsys_modem_restart : testmode */
-
 module_param(enable_debug, int, S_IRUGO | S_IWUSR);
 
 /**
@@ -865,8 +860,7 @@ int subsys_modem_restart(void)
 
 	rsl = dev->restart_level;
 	dev->restart_level = RESET_SUBSYS_COUPLED;
-	subsys_set_crash_status(dev, true);
-	ignore_errors_by_subsys_modem_restart = true; //                         
+	subsys_set_crash_status(dev, true);                      
 	ret = subsystem_restart_dev(dev);
 	dev->restart_level = rsl;
 #ifdef CONFIG_MACH_LGE

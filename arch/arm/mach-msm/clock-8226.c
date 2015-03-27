@@ -3874,13 +3874,6 @@ static void __init msm8226_clock_post_init(void)
 	/* Set an initial rate (fmax at nominal) on the MMSSNOC AXI clock */
 	clk_set_rate(&axi_clk_src.c, 200000000);
 
-
-/*                                   */
-#if defined(CONFIG_LGE_NFC_PN544_C3) || defined(CONFIG_LGE_NFC_PN547_C2)
-	clk_prepare_enable(&cxo_d1_pin.c);
-#endif
-	/*                                  */
-
 	/* Set rates for single-rate clocks. */
 	clk_set_rate(&usb_hs_system_clk_src.c,
 			usb_hs_system_clk_src.freq_tbl[0].freq_hz);

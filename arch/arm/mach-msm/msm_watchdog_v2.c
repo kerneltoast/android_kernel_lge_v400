@@ -120,8 +120,6 @@ static int msm_watchdog_suspend(struct device *dev)
 	__raw_writel(1, wdog_dd->base + WDT0_RST);
 	__raw_writel(0, wdog_dd->base + WDT0_EN);
 	mb();
-
-	pr_err("MSM Apps Watchdog suspended.\n");
 	return 0;
 }
 
@@ -134,8 +132,6 @@ static int msm_watchdog_resume(struct device *dev)
 	__raw_writel(1, wdog_dd->base + WDT0_EN);
 	__raw_writel(1, wdog_dd->base + WDT0_RST);
 	mb();
-
-	pr_err("MSM Apps Watchdog resumed.\n");
 	return 0;
 }
 
@@ -175,7 +171,7 @@ static void wdog_disable(struct msm_watchdog_data *wdog_dd)
 	/* may be suspended after the first write above */
 	__raw_writel(0, wdog_dd->base + WDT0_EN);
 	mb();
-	pr_err("MSM Apps Watchdog deactivated.\n");
+	pr_info("MSM Apps Watchdog deactivated.\n");
 }
 
 struct wdog_disable_work_data {
@@ -221,7 +217,7 @@ static ssize_t wdog_disable_set(struct device *dev,
 	if (disable == 1) {
 		mutex_lock(&wdog_dd->disable_lock);
 		if (enable == 0) {
-			pr_err("MSM Apps Watchdog already disabled\n");
+			pr_info("MSM Apps Watchdog already disabled\n");
 			mutex_unlock(&wdog_dd->disable_lock);
 			return count;
 		}
@@ -256,10 +252,6 @@ static void pet_watchdog(struct msm_watchdog_data *wdog_dd)
 	unsigned long long time_ns;
 	unsigned long long slack_ns;
 	unsigned long long bark_time_ns = wdog_dd->bark_time * 1000000ULL;
-
-#ifdef CONFIG_MACH_LGE
-	printk(KERN_INFO "%s\n", __func__);
-#endif
 
 	for (i = 0; i < 2; i++) {
 		count = (__raw_readl(wdog_dd->base + WDT0_STS) >> 1) & 0xFFFFF;

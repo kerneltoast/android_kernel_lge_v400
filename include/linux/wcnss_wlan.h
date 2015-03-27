@@ -46,10 +46,6 @@ enum {
 #define PRONTO_PMU_OFFSET       0x1004
 #define WCNSS_PMU_CFG_GC_BUS_MUX_SEL_TOP   BIT(5)
 
-// QCT_PATCH enable debug log when watchdog happens
-#define CONFIG_WCNSS_REGISTER_DUMP_ON_BITE 1
-// QCT_PATCH enable debug log when watchdog happens
-
 void wcnss_get_monotonic_boottime(struct timespec *ts);
 struct device *wcnss_wlan_get_device(void);
 struct resource *wcnss_wlan_get_memory_map(struct device *dev);

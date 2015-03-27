@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2015, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -35,6 +35,7 @@
 #include <linux/pm_runtime.h>
 #include <linux/kernel.h>
 #include <linux/gpio.h>
+#include <linux/of_gpio.h>
 #include "wcd9306.h"
 #include "wcd9xxx-resmgr.h"
 #include "wcd9xxx-common.h"
@@ -66,6 +67,10 @@ static atomic_t kp_tapan_priv;
 static int spkr_drv_wrnd_param_set(const char *val,
 				   const struct kernel_param *kp);
 static int spkr_drv_wrnd = 1;
+
+#ifdef CONFIG_SND_SOC_HFP
+static int tapan_tx_mute = 0;
+#endif
 
 static struct kernel_param_ops spkr_drv_wrnd_param_ops = {
 	.set = spkr_drv_wrnd_param_set,
@@ -101,6 +106,9 @@ MODULE_PARM_DESC(spkr_drv_wrnd,
 #define TAPAN_SLIM_IRQ_UNDERFLOW (1 << 1)
 #define TAPAN_SLIM_IRQ_PORT_CLOSED (1 << 2)
 
+#ifdef CONFIG_SND_SPK_BOOST
+extern int boost_gpio;
+#endif
 enum tapan_codec_type {
 	WCD9306,
 	WCD9302,
@@ -553,7 +561,44 @@ static int tapan_loopback_mode_put(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
+/*                                                   
+                                                                     
+ */
 
+#if defined(CONFIG_MACH_LGE) //                                            
+static int tapan_pa_gain_get(struct snd_kcontrol *kcontrol,
+				struct snd_ctl_elem_value *ucontrol)
+{
+	u8 ear_pa_gain;
+	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
+
+	ear_pa_gain = snd_soc_read(codec, TAPAN_A_RX_EAR_GAIN);
+
+	ear_pa_gain = ear_pa_gain >> 5;
+
+	ucontrol->value.integer.value[0] = ear_pa_gain;
+
+	dev_dbg(codec->dev, "%s: ear_pa_gain = 0x%x\n", __func__, ear_pa_gain);
+
+	return 0;
+}
+
+static int tapan_pa_gain_put(struct snd_kcontrol *kcontrol,
+				struct snd_ctl_elem_value *ucontrol)
+{
+	u8 ear_pa_gain;
+	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
+
+	dev_dbg(codec->dev, "%s: ucontrol->value.integer.value[0]  = %ld\n",
+			 __func__, ucontrol->value.integer.value[0]);
+
+	ear_pa_gain =  ucontrol->value.integer.value[0] << 5;
+
+	snd_soc_update_bits(codec, TAPAN_A_RX_EAR_GAIN, 0xE0, ear_pa_gain);
+	return 0;
+}
+
+#else //qct org
 static int tapan_pa_gain_get(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
 {
@@ -619,6 +664,10 @@ static int tapan_pa_gain_put(struct snd_kcontrol *kcontrol,
 				    0xE0, ear_pa_gain << 5);
 	return rc;
 }
+#endif
+/*                                                   
+                                                                   
+ */
 
 static int tapan_get_iir_enable_audio_mixer(
 					struct snd_kcontrol *kcontrol,
@@ -1078,13 +1127,60 @@ static int tapan_config_compander(struct snd_soc_dapm_widget *w,
 	return 0;
 }
 
+
+#ifdef CONFIG_SND_SOC_HFP
+static const char *const tapan_tx_mute_text[] = {"unmute", "mute"};
+static const struct soc_enum tapan_tx_mute_enum[] = {
+	SOC_ENUM_SINGLE_EXT(2, tapan_tx_mute_text),
+};
+
+static int tapan_tx_mute_get(struct snd_kcontrol *kcontrol,
+				struct snd_ctl_elem_value *ucontrol)
+{
+	pr_debug("%s: tapan_tx_mute  = %d", __func__, tapan_tx_mute);
+	ucontrol->value.integer.value[0] = tapan_tx_mute;
+	return 0;
+}
+
+static int tapan_tx_mute_put(struct snd_kcontrol *kcontrol,
+				struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
+	u16 tx_vol_ctl_reg0 = TAPAN_A_CDC_TX1_VOL_CTL_CFG;
+	u16 tx_vol_ctl_reg1 = TAPAN_A_CDC_TX1_VOL_CTL_CFG + 8;
+	switch (ucontrol->value.integer.value[0]) {
+		case 0:
+			snd_soc_update_bits(codec, tx_vol_ctl_reg0, 0x01, 0);
+			snd_soc_update_bits(codec, tx_vol_ctl_reg1, 0x01, 0);
+			break;
+		case 1:
+			snd_soc_update_bits(codec, tx_vol_ctl_reg0, 0x01, 1);
+			snd_soc_update_bits(codec, tx_vol_ctl_reg1, 0x01, 1);
+			break;
+		default:
+			break;
+	}
+	tapan_tx_mute = ucontrol->value.integer.value[0];
+	pr_debug("%s: tapan_tx_mute = %d\n", __func__, tapan_tx_mute);
+	return 0;
+}
+#endif
+
 static const char * const tapan_loopback_mode_ctrl_text[] = {
 		"DISABLE", "ENABLE"};
 static const struct soc_enum tapan_loopback_mode_ctl_enum[] = {
 		SOC_ENUM_SINGLE_EXT(2, tapan_loopback_mode_ctrl_text),
 };
 
-
+/*                                                   
+                                                                     
+ */
+ #if defined(CONFIG_MACH_LGE)
+static const char * const tapan_ear_pa_gain_text[] = {"POS_6_DB", "POS_4P5_DB", "POS_3_DB", "POS_1P5_DB","POS_0_DB"};
+static const struct soc_enum tapan_ear_pa_gain_enum[] = {
+		SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(tapan_ear_pa_gain_text), tapan_ear_pa_gain_text),
+};
+ #else
 static const char * const tapan_ear_pa_gain_text[] = {"POS_6_DB", "POS_4P5_DB",
 						      "POS_3_DB", "POS_1P5_DB",
 						      "POS_0_DB", "NEG_2P5_DB",
@@ -1093,6 +1189,10 @@ static const struct soc_enum tapan_ear_pa_gain_enum[] = {
 		SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(tapan_ear_pa_gain_text),
 				    tapan_ear_pa_gain_text),
 };
+#endif
+/*                                                   
+                                                                   
+ */
 
 static const char *const tapan_anc_func_text[] = {"OFF", "ON"};
 static const struct soc_enum tapan_anc_func_enum =
@@ -1158,6 +1258,10 @@ static int tapan_hph_impedance_get(struct snd_kcontrol *kcontrol,
 
 static const struct snd_kcontrol_new tapan_common_snd_controls[] = {
 
+#ifdef CONFIG_SND_SOC_HFP
+	SOC_ENUM_EXT("TX_MUTE", tapan_tx_mute_enum[0],
+			tapan_tx_mute_get, tapan_tx_mute_put),
+#endif
 	SOC_ENUM_EXT("EAR PA Gain", tapan_ear_pa_gain_enum[0],
 		tapan_pa_gain_get, tapan_pa_gain_put),
 
@@ -1181,6 +1285,31 @@ static const struct snd_kcontrol_new tapan_common_snd_controls[] = {
 	SOC_SINGLE_TLV("ADC2 Volume", TAPAN_A_TX_2_EN, 2, 19, 0, analog_gain),
 	SOC_SINGLE_TLV("ADC3 Volume", TAPAN_A_TX_3_EN, 2, 19, 0, analog_gain),
 	SOC_SINGLE_TLV("ADC4 Volume", TAPAN_A_TX_4_EN, 2, 19, 0, analog_gain),
+/*                                                   
+                                                                                       
+ */ 
+#if defined(CONFIG_MACH_LGE) //        
+	SOC_SINGLE_S8_TLV("RX1 Digital Volume", TAPAN_A_CDC_RX1_VOL_CTL_B2_CTL,
+		-60, 40, digital_gain),
+	SOC_SINGLE_S8_TLV("RX2 Digital Volume", TAPAN_A_CDC_RX2_VOL_CTL_B2_CTL,
+		-60, 40, digital_gain),
+	SOC_SINGLE_S8_TLV("RX3 Digital Volume", TAPAN_A_CDC_RX3_VOL_CTL_B2_CTL,
+		-60, 40, digital_gain),
+
+	SOC_SINGLE_S8_TLV("DEC1 Volume", TAPAN_A_CDC_TX1_VOL_CTL_GAIN, -60, 40,
+		digital_gain),
+	SOC_SINGLE_S8_TLV("DEC2 Volume", TAPAN_A_CDC_TX2_VOL_CTL_GAIN, -60, 40,
+		digital_gain),
+
+	SOC_SINGLE_S8_TLV("IIR1 INP1 Volume", TAPAN_A_CDC_IIR1_GAIN_B1_CTL, -60,
+		40, digital_gain),
+	SOC_SINGLE_S8_TLV("IIR1 INP2 Volume", TAPAN_A_CDC_IIR1_GAIN_B2_CTL, -60,
+		40, digital_gain),
+	SOC_SINGLE_S8_TLV("IIR1 INP3 Volume", TAPAN_A_CDC_IIR1_GAIN_B3_CTL, -60,
+		40, digital_gain),
+	SOC_SINGLE_S8_TLV("IIR1 INP4 Volume", TAPAN_A_CDC_IIR1_GAIN_B4_CTL, -60,
+		40, digital_gain),
+#else //qct org
 	SOC_SINGLE_S8_TLV("RX1 Digital Volume", TAPAN_A_CDC_RX1_VOL_CTL_B2_CTL,
 		-84, 40, digital_gain),
 	SOC_SINGLE_S8_TLV("RX2 Digital Volume", TAPAN_A_CDC_RX2_VOL_CTL_B2_CTL,
@@ -1201,6 +1330,10 @@ static const struct snd_kcontrol_new tapan_common_snd_controls[] = {
 		40, digital_gain),
 	SOC_SINGLE_S8_TLV("IIR1 INP4 Volume", TAPAN_A_CDC_IIR1_GAIN_B4_CTL, -84,
 		40, digital_gain),
+#endif
+/*                                                   
+                                                                                     
+ */ 
 	SOC_SINGLE_S8_TLV("IIR2 INP1 Volume", TAPAN_A_CDC_IIR2_GAIN_B1_CTL, -84,
 		40, digital_gain),
 	SOC_SINGLE_S8_TLV("IIR2 INP2 Volume", TAPAN_A_CDC_IIR2_GAIN_B2_CTL, -84,
@@ -1279,12 +1412,27 @@ static const struct snd_kcontrol_new tapan_common_snd_controls[] = {
 static const struct snd_kcontrol_new tapan_9306_snd_controls[] = {
 	SOC_SINGLE_TLV("ADC5 Volume", TAPAN_A_TX_5_EN, 2, 19, 0, analog_gain),
 
+/*                                                   
+                                                                                       
+ */ 
+#if defined(CONFIG_MACH_LGE) //        
+	SOC_SINGLE_S8_TLV("RX4 Digital Volume", TAPAN_A_CDC_RX4_VOL_CTL_B2_CTL,
+		-60, 40, digital_gain),
+	SOC_SINGLE_S8_TLV("DEC3 Volume", TAPAN_A_CDC_TX3_VOL_CTL_GAIN, -60, 40,
+		digital_gain),
+	SOC_SINGLE_S8_TLV("DEC4 Volume", TAPAN_A_CDC_TX4_VOL_CTL_GAIN, -60, 40,
+		digital_gain),
+#else //qct org
 	SOC_SINGLE_S8_TLV("RX4 Digital Volume", TAPAN_A_CDC_RX4_VOL_CTL_B2_CTL,
 		-84, 40, digital_gain),
 	SOC_SINGLE_S8_TLV("DEC3 Volume", TAPAN_A_CDC_TX3_VOL_CTL_GAIN, -84, 40,
 		digital_gain),
 	SOC_SINGLE_S8_TLV("DEC4 Volume", TAPAN_A_CDC_TX4_VOL_CTL_GAIN, -84, 40,
 		digital_gain),
+#endif
+/*                                                   
+                                                                                     
+ */ 
 	SOC_SINGLE_EXT("ANC Slot", SND_SOC_NOPM, 0, 100, 0, tapan_get_anc_slot,
 		tapan_put_anc_slot),
 	SOC_ENUM_EXT("ANC Function", tapan_anc_func_enum, tapan_get_anc_func,
@@ -2088,7 +2236,7 @@ static int tapan_codec_enable_lineout(struct snd_soc_dapm_widget *w,
 						 WCD9XXX_CLSH_EVENT_POST_PA);
 		dev_dbg(codec->dev, "%s: sleeping 5 ms after %s PA turn on\n",
 				__func__, w->name);
-		/* Wait for CnP time after PA enable */
+                /* Wait for CnP time after PA enable */
 		usleep_range(5000, 5100);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
@@ -2096,10 +2244,10 @@ static int tapan_codec_enable_lineout(struct snd_soc_dapm_widget *w,
 						 WCD9XXX_CLSH_STATE_LO,
 						 WCD9XXX_CLSH_REQ_DISABLE,
 						 WCD9XXX_CLSH_EVENT_POST_PA);
-		dev_dbg(codec->dev, "%s: sleeping 5 ms after %s PA turn on\n",
-				__func__, w->name);
-		/* Wait for CnP time after PA disable */
-		usleep_range(5000, 5100);
+                dev_dbg(codec->dev, "%s: sleeping 5 ms after %s PA turn off\n",
+                                __func__, w->name);
+                /* Wait for CnP time after PA disable */
+                usleep_range(5000, 5100);
 		break;
 	}
 	return 0;
@@ -2357,11 +2505,10 @@ static int tapan_codec_enable_micbias(struct snd_soc_dapm_widget *w,
 
 		if (micb_ctl_reg == TAPAN_A_MICB_2_CTL) {
 			if (++tapan->micb_2_users == 1)
-				wcd9xxx_resmgr_add_cond_update_bits(
-						&tapan->resmgr,
-						WCD9XXX_COND_HPH_MIC,
-						micb_ctl_reg, w->shift,
-						false);
+				snd_soc_update_bits(codec, micb_ctl_reg,
+						1 << w->shift,
+						1 << w->shift);
+
 			pr_debug("%s: micb_2_users %d\n", __func__,
 				 tapan->micb_2_users);
 		} else
@@ -2378,11 +2525,10 @@ static int tapan_codec_enable_micbias(struct snd_soc_dapm_widget *w,
 	case SND_SOC_DAPM_POST_PMD:
 		if (micb_ctl_reg == TAPAN_A_MICB_2_CTL) {
 			if (--tapan->micb_2_users == 0)
-				wcd9xxx_resmgr_rm_cond_update_bits(
-						&tapan->resmgr,
-						WCD9XXX_COND_HPH_MIC,
-						micb_ctl_reg, 7,
-						false);
+						snd_soc_update_bits(codec, micb_ctl_reg,
+							1 << w->shift,
+							0);
+
 			pr_debug("%s: micb_2_users %d\n", __func__,
 				 tapan->micb_2_users);
 			WARN(tapan->micb_2_users < 0,
@@ -2558,6 +2704,8 @@ static int tapan_codec_enable_dec(struct snd_soc_dapm_widget *w,
 		break;
 
 	case SND_SOC_DAPM_POST_PMU:
+		/* enable HPF */
+		snd_soc_update_bits(codec, tx_mux_ctl_reg , 0x08, 0x00);
 
 		if (tapan_p->lb_mode) {
 			pr_debug("%s: loopback mode unmute the DEC\n",
@@ -2955,6 +3103,22 @@ static int tapan_spk_dac_event(struct snd_soc_dapm_widget *w,
 	struct snd_kcontrol *kcontrol, int event)
 {
 	struct snd_soc_codec *codec = w->codec;
+#ifdef CONFIG_SND_SPK_BOOST
+	int status;
+
+	if(boost_gpio < 0)
+	{
+		dev_dbg(codec->dev, "%s:Wrong PM8226 GPIO Addr\n", __func__);
+		return -1;
+	}
+	if(event == 1)
+		gpio_set_value_cansleep(boost_gpio, 1);
+	else
+		gpio_set_value_cansleep(boost_gpio, 0);
+
+	status = gpio_get_value_cansleep(boost_gpio);
+	dev_dbg(codec->dev, "%s, boost PM-GPIO2 = %d\n", __func__, status);
+#endif
 
 	dev_dbg(codec->dev, "%s %s %d\n", __func__, w->name, event);
 	return 0;
@@ -3572,7 +3736,7 @@ static void tapan_shutdown(struct snd_pcm_substream *substream,
 	dev_dbg(dai->codec->dev, "%s(): substream = %s  stream = %d\n",
 		 __func__, substream->name, substream->stream);
 
-	if (dai->id < NUM_CODEC_DAIS) {
+	if (dai->id < NUM_CODEC_DAIS) { //                                         
 		if (tapan->dai[dai->id].ch_mask) {
 			active = 1;
 			dev_dbg(dai->codec->dev, "%s(): Codec DAI: chmask[%d] = 0x%lx\n",
@@ -4099,46 +4263,63 @@ static int tapan_hw_params(struct snd_pcm_substream *substream,
 int tapan_digital_mute(struct snd_soc_dai *dai, int mute)
 {
 	struct snd_soc_codec *codec = NULL;
-	u16 tx_vol_ctl_reg = 0;
-	u8 decimator = 0, i;
-	struct tapan_priv *tapan_p;
-
-	pr_debug("%s: Digital Mute val = %d\n", __func__, mute);
+	struct wcd9xxx_ch *ch = NULL;
+	struct tapan_priv *tapan = NULL;
+	u32 tx_port = 0;
+	u16 tx_vol_ctl_reg = 0, tx_port_reg = 0;
+	u8 tx_port_reg_val = 0;
+	s8 decimator = 0;
 
 	if (!dai || !dai->codec) {
 		pr_err("%s: Invalid params\n", __func__);
 		return -EINVAL;
 	}
 	codec = dai->codec;
-	tapan_p = snd_soc_codec_get_drvdata(codec);
-
-	if (dai->id != AIF1_CAP) {
+	if (dai->id != AIF1_CAP && dai->id != AIF2_CAP && dai->id != AIF3_CAP) {
 		dev_dbg(codec->dev, "%s: Not capture use case skip\n",
 		__func__);
 		return 0;
 	}
-
-	mute = (mute) ? 1 : 0;
-	if (!mute) {
-		/*
-		 * 5 ms is an emperical value for the mute time
-		 * that was arrived by checking the pop level
-		 * to be inaudible
-		 */
-		usleep_range(5000, 5010);
+	tapan = snd_soc_codec_get_drvdata(codec);
+	if (!tapan) {
+		dev_err(codec->dev, "%s: drvdata get failed\n", __func__);
+		return -EINVAL;
 	}
+	mute = (mute) ? 1 : 0;
+	if (!mute)
+		usleep_range(20000, 20100);
+	list_for_each_entry(ch, &tapan->dai[dai->id].wcd9xxx_ch_list, list) {
 
-	for (i = 0; i < NUM_DECIMATORS; i++) {
-		if (tapan_p->dec_active[i])
-			decimator = i + 1;
-		if (decimator && decimator <= NUM_DECIMATORS) {
-			pr_debug("%s: Mute = %d Decimator = %d", __func__,
-					mute, decimator);
-			tx_vol_ctl_reg = TAPAN_A_CDC_TX1_VOL_CTL_CFG +
-				8 * (decimator - 1);
-			snd_soc_update_bits(codec, tx_vol_ctl_reg, 0x01, mute);
+		tx_port = ch->port + 1;
+		dev_dbg(codec->dev, "%s: dai->id = %d, tx_port = %d",
+			__func__, dai->id, tx_port);
+
+		if ((tx_port < 1) || (tx_port > NUM_DECIMATORS)) {
+			dev_err(codec->dev, "%s: Invalid SLIM TX%u DAI ID is %d\n",
+				__func__, tx_port, dai->id);
+			return -EINVAL;
 		}
+
+		tx_port_reg = TAPAN_A_CDC_CONN_TX_SB_B1_CTL + (tx_port - 1);
+		tx_port_reg_val =  snd_soc_read(codec, tx_port_reg);
 		decimator = 0;
+		if ((tx_port >= 1) && (tx_port <= NUM_DECIMATORS)) {
+			tx_port_reg_val =  tx_port_reg_val & 0x0F;
+			if ((tx_port_reg_val >= 0x8) &&
+				(tx_port_reg_val <= 0xB)) {
+				decimator = (tx_port_reg_val - 0x8) + 1;
+			}
+		}
+		if (decimator && decimator <= NUM_DECIMATORS) {
+			dev_dbg(codec->dev, "%s: Decimator used %d\n",
+			__func__, decimator);
+			tx_vol_ctl_reg =
+			TAPAN_A_CDC_TX1_VOL_CTL_CFG + 8 * (decimator - 1);
+			/* Set TX digital mute */
+			snd_soc_update_bits(codec, tx_vol_ctl_reg, 0x01, mute);
+		} else
+			dev_err(codec->dev, "%s: Decimator used %d\n",
+			__func__, decimator);
 	}
 	return 0;
 }
@@ -4845,6 +5026,11 @@ static const struct snd_soc_dapm_widget tapan_common_dapm_widgets[] = {
 		&rx3_mix1_inp2_mux),
 	SND_SOC_DAPM_MUX("RX3 MIX1 INP3", SND_SOC_NOPM, 0, 0,
 		&rx3_mix1_inp3_mux),
+		
+	#if 0 //                                       
+	//SND_SOC_DAPM_MUX("RX3 MIX1 INP3", SND_SOC_NOPM, 0, 0,
+		//&rx3_mix1_inp2_mux),
+	#endif
 
 	/* RX1 MIX2 mux inputs */
 	SND_SOC_DAPM_MUX("RX1 MIX2 INP1", SND_SOC_NOPM, 0, 0,

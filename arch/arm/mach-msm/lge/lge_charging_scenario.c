@@ -26,23 +26,29 @@ static int time_order = 1;
 #endif
 #endif
 
-#ifdef CONFIG_LGE_PM_VZW_CHARGING_TEMP_SCENARIO
+#if defined(CONFIG_LGE_PM_VZW_CHARGING_TEMP_SCENARIO) || defined(CONFIG_LGE_PM_CHARGING_TEMP_SCENARIO_V1_8)
 #define CHG_MAXIDX	7
 #else
 #define CHG_MAXIDX	6
 #endif
 
 static struct batt_temp_table chg_temp_table[CHG_MAXIDX] = {
-#ifdef CONFIG_MACH_MSM8926_JAGNM_ATT
+#if defined(CONFIG_MACH_MSM8926_JAGNM_ATT) || defined(CONFIG_MACH_MSM8926_JAGNM_RGS) || defined(CONFIG_MACH_MSM8926_JAGNM_TLS) \
+	|| defined(CONFIG_MACH_MSM8926_JAGNM_VTR) || defined(CONFIG_MACH_MSM8926_JAGNM_GLOBAL_COM) || defined(CONFIG_MACH_MSM8926_JAGNM_BELL) || defined(CONFIG_MACH_MSM8926_JAGC_SPR)
 	{INT_MIN,       -81,    CHG_BATTEMP_BL_M8},	// batt_temp < -10
 	{    -80,       -50,    CHG_BATTEMP_M8_M5},	// -10 <= batt_temp <= -5
 #else
 	{INT_MIN,       -101,    CHG_BATTEMP_BL_M11},	// batt_temp < -10
 	{    -100,       -50,    CHG_BATTEMP_M10_M5},	// -10 <= batt_temp <= -5
 #endif
+#if defined(CONFIG_LGE_PM_CHARGING_TEMP_SCENARIO_V1_8)
+	{     -49,       429,    CHG_BATTEMP_M4_41},	// -5 < batt_temp < 43
+	{     430,       450,    CHG_BATTEMP_42_45},	// 43 <= batt_temp <= 45
+#else
 	{     -49,       419,    CHG_BATTEMP_M4_41},	// -5 < batt_temp < 42
 	{     420,       450,    CHG_BATTEMP_42_45},	// 42 <= batt_temp <= 45
-#ifdef CONFIG_LGE_PM_VZW_CHARGING_TEMP_SCENARIO
+#endif
+#if defined(CONFIG_LGE_PM_VZW_CHARGING_TEMP_SCENARIO) || defined(CONFIG_LGE_PM_CHARGING_TEMP_SCENARIO_V1_8)
 	{     451,       520,    CHG_BATTEMP_46_52},	// 45 < batt_temp <= 52
 	{     521,       550,    CHG_BATTEMP_53_OT},	// 52 < batt_temp <= 55
 #else
@@ -84,18 +90,20 @@ determine_lge_charging_state(enum lge_battemp_states battemp_st, int batt_volt)
 	switch (charging_state) {
 	case CHG_BATT_NORMAL_STATE:
 		if (battemp_st >= CHG_BATTEMP_AB_OT ||
-#ifdef CONFIG_MACH_MSM8926_JAGNM_ATT
+#if defined(CONFIG_MACH_MSM8926_JAGNM_ATT) || defined(CONFIG_MACH_MSM8926_JAGNM_RGS) || defined(CONFIG_MACH_MSM8926_JAGNM_TLS) \
+	|| defined(CONFIG_MACH_MSM8926_JAGNM_VTR) || defined(CONFIG_MACH_MSM8926_JAGNM_GLOBAL_COM) || defined(CONFIG_MACH_MSM8926_JAGNM_BELL) || defined(CONFIG_MACH_MSM8926_JAGC_SPR)
 			battemp_st <= CHG_BATTEMP_BL_M8) {
 #else
 			battemp_st <= CHG_BATTEMP_BL_M11) {
 #endif
 			states_change = STS_CHE_NORMAL_TO_STPCHG;
-#ifdef CONFIG_MACH_MSM8926_JAGNM_ATT
+#if defined(CONFIG_MACH_MSM8926_JAGNM_ATT) || defined(CONFIG_MACH_MSM8926_JAGNM_RGS) || defined(CONFIG_MACH_MSM8926_JAGNM_TLS) \
+	|| defined(CONFIG_MACH_MSM8926_JAGNM_VTR) || defined(CONFIG_MACH_MSM8926_JAGNM_GLOBAL_COM) || defined(CONFIG_MACH_MSM8926_JAGNM_BELL) || defined(CONFIG_MACH_MSM8926_JAGC_SPR)
 			if (battemp_st <= CHG_BATTEMP_BL_M8)
 #else
 			if (battemp_st <= CHG_BATTEMP_BL_M11)
 #endif
-#ifdef CONFIG_LGE_PM_VZW_CHARGING_TEMP_SCENARIO
+#if defined(CONFIG_LGE_PM_VZW_CHARGING_TEMP_SCENARIO) || defined(CONFIG_LGE_PM_CHARGING_TEMP_SCENARIO_V1_8)
 				pseudo_chg_ui = 0;
 #else
 				pseudo_chg_ui = 1;
@@ -104,7 +112,7 @@ determine_lge_charging_state(enum lge_battemp_states battemp_st, int batt_volt)
 				pseudo_chg_ui = 0;
 
 			next_state = CHG_BATT_STPCHG_STATE;
-#ifdef CONFIG_LGE_PM_VZW_CHARGING_TEMP_SCENARIO
+#if defined(CONFIG_LGE_PM_VZW_CHARGING_TEMP_SCENARIO) || defined(CONFIG_LGE_PM_CHARGING_TEMP_SCENARIO_V1_8)
 		} else if (battemp_st == CHG_BATTEMP_46_52 || battemp_st == CHG_BATTEMP_53_OT) {
 #else
 		} else if (battemp_st == CHG_BATTEMP_46_OT) {
@@ -122,18 +130,20 @@ determine_lge_charging_state(enum lge_battemp_states battemp_st, int batt_volt)
 		break;
 	case CHG_BATT_DECCUR_STATE:
 		if (battemp_st >= CHG_BATTEMP_AB_OT ||
-#ifdef CONFIG_MACH_MSM8926_JAGNM_ATT
+#if defined(CONFIG_MACH_MSM8926_JAGNM_ATT) || defined(CONFIG_MACH_MSM8926_JAGNM_RGS) || defined(CONFIG_MACH_MSM8926_JAGNM_TLS) \
+	|| defined(CONFIG_MACH_MSM8926_JAGNM_VTR) || defined(CONFIG_MACH_MSM8926_JAGNM_GLOBAL_COM) || defined(CONFIG_MACH_MSM8926_JAGNM_BELL) || defined(CONFIG_MACH_MSM8926_JAGC_SPR)
 			battemp_st <= CHG_BATTEMP_BL_M8) {
 #else
 			battemp_st <= CHG_BATTEMP_BL_M11) {
 #endif
 			states_change = STS_CHE_DECCUR_TO_STPCHG;
-#ifdef CONFIG_MACH_MSM8926_JAGNM_ATT
+#if defined(CONFIG_MACH_MSM8926_JAGNM_ATT) || defined(CONFIG_MACH_MSM8926_JAGNM_RGS) || defined(CONFIG_MACH_MSM8926_JAGNM_TLS) \
+	|| defined(CONFIG_MACH_MSM8926_JAGNM_VTR) || defined(CONFIG_MACH_MSM8926_JAGNM_GLOBAL_COM) || defined(CONFIG_MACH_MSM8926_JAGNM_BELL) || defined(CONFIG_MACH_MSM8926_JAGC_SPR)
 			if (battemp_st <= CHG_BATTEMP_BL_M8)
 #else
 			if (battemp_st <= CHG_BATTEMP_BL_M11)
 #endif
-#ifdef CONFIG_LGE_PM_VZW_CHARGING_TEMP_SCENARIO
+#if defined(CONFIG_LGE_PM_VZW_CHARGING_TEMP_SCENARIO) || defined(CONFIG_LGE_PM_CHARGING_TEMP_SCENARIO_V1_8)
 				pseudo_chg_ui = 0;
 #else
 				pseudo_chg_ui = 1;
@@ -146,7 +156,8 @@ determine_lge_charging_state(enum lge_battemp_states battemp_st, int batt_volt)
 			states_change = STS_CHE_DECCUR_TO_STPCHG;
 			pseudo_chg_ui = 1;
 			next_state = CHG_BATT_STPCHG_STATE;
-#ifndef CONFIG_MACH_MSM8926_JAGNM_ATT
+#if !defined(CONFIG_MACH_MSM8926_JAGNM_ATT)	&& !defined(CONFIG_MACH_MSM8926_JAGNM_RGS) && !defined(CONFIG_MACH_MSM8926_JAGNM_TLS) \
+	&& !defined(CONFIG_MACH_MSM8926_JAGNM_VTR) && !defined(CONFIG_MACH_MSM8926_JAGNM_BELL) && !defined(CONFIG_MACH_MSM8926_JAGC_SPR)
 		} else if (battemp_st <= CHG_BATTEMP_M4_41) {
 			states_change = STS_CHE_DECCUR_TO_NORAML;
 			pseudo_chg_ui = 0;
@@ -157,7 +168,8 @@ determine_lge_charging_state(enum lge_battemp_states battemp_st, int batt_volt)
 	case CHG_BATT_WARNIG_STATE:
 		break;
 	case CHG_BATT_STPCHG_STATE:
-#ifdef CONFIG_MACH_MSM8926_JAGNM_ATT
+#if defined(CONFIG_MACH_MSM8926_JAGNM_ATT) || defined(CONFIG_MACH_MSM8926_JAGNM_RGS) || defined(CONFIG_MACH_MSM8926_JAGNM_TLS) \
+	|| defined(CONFIG_MACH_MSM8926_JAGNM_VTR) || defined(CONFIG_MACH_MSM8926_JAGNM_BELL) || defined(CONFIG_MACH_MSM8926_JAGC_SPR)
 		if (battemp_st >= CHG_BATTEMP_M8_M5 && battemp_st <= CHG_BATTEMP_42_45) {
 #else
 		if (battemp_st == CHG_BATTEMP_M4_41) {
@@ -166,12 +178,11 @@ determine_lge_charging_state(enum lge_battemp_states battemp_st, int batt_volt)
 			pseudo_chg_ui = 0;
 			next_state = CHG_BATT_NORMAL_STATE;
 		}
-#ifdef CONFIG_LGE_PM_VZW_CHARGING_TEMP_SCENARIO
+#if defined(CONFIG_LGE_PM_VZW_CHARGING_TEMP_SCENARIO) || defined(CONFIG_LGE_PM_CHARGING_TEMP_SCENARIO_V1_8)
 		else if (battemp_st == CHG_BATTEMP_46_52 || battemp_st == CHG_BATTEMP_42_45) {
 			if (batt_volt > DC_IUSB_VOLTUV) {
 				pseudo_chg_ui = 1;
 				next_state = CHG_BATT_STPCHG_STATE;
-		
 			} else {
 				states_change = STS_CHE_STPCHG_TO_DECCUR;
 				pseudo_chg_ui = 0;
@@ -180,7 +191,8 @@ determine_lge_charging_state(enum lge_battemp_states battemp_st, int batt_volt)
 		}
 #endif
 
-#ifdef CONFIG_MACH_MSM8926_JAGNM_ATT
+#if defined(CONFIG_MACH_MSM8926_JAGNM_ATT) || defined(CONFIG_MACH_MSM8926_JAGNM_RGS) || defined(CONFIG_MACH_MSM8926_JAGNM_TLS) \
+	|| defined(CONFIG_MACH_MSM8926_JAGNM_VTR) || defined(CONFIG_MACH_MSM8926_JAGNM_GLOBAL_COM) || defined(CONFIG_MACH_MSM8926_JAGNM_BELL) || defined(CONFIG_MACH_MSM8926_JAGC_SPR)
 		else if (battemp_st <= CHG_BATTEMP_BL_M8 || battemp_st >= CHG_BATTEMP_AB_OT) {
 #else
 		else if (battemp_st >= CHG_BATTEMP_AB_OT) {
@@ -197,7 +209,7 @@ determine_lge_charging_state(enum lge_battemp_states battemp_st, int batt_volt)
 #endif
 		break;
 	default:
-		pr_debug("unknown charging status. %d\n", charging_state);
+		pr_err("unknown charging status. %d\n", charging_state);
 		break;
 	}
 
@@ -273,7 +285,8 @@ void lge_monitor_batt_temp(struct charging_info req, struct charging_rsp *res)
 
 	if (battemp_state >= CHG_BATTEMP_AB_OT)
 		res->btm_state = BTM_HEALTH_OVERHEAT;
-#ifdef CONFIG_MACH_MSM8926_JAGNM_ATT
+#if defined(CONFIG_MACH_MSM8926_JAGNM_ATT) || defined(CONFIG_MACH_MSM8926_JAGNM_RGS) || defined(CONFIG_MACH_MSM8926_JAGNM_TLS) \
+	|| defined(CONFIG_MACH_MSM8926_JAGNM_VTR) || defined(CONFIG_MACH_MSM8926_JAGNM_GLOBAL_COM) || defined(CONFIG_MACH_MSM8926_JAGNM_BELL) || defined(CONFIG_MACH_MSM8926_JAGC_SPR)
 	else if (battemp_state <= CHG_BATTEMP_BL_M8)
 #else
 	else if (battemp_state <= CHG_BATTEMP_BL_M11)
@@ -289,28 +302,28 @@ void lge_monitor_batt_temp(struct charging_info req, struct charging_rsp *res)
 	}
 
 #ifdef DEBUG_LCS
-	pr_debug("DLCS ==============================================\n");
-//	pr_debug("DLCS : dummy battery temperature  = %d\n", dummy_temp);
-	pr_debug("DLCS : battery temperature states = %d\n", battemp_state);
-	pr_debug("DLCS : res -> state        = %d\n", res->state);
-	pr_debug("DLCS : res -> change_lvl   = %d\n", res->change_lvl);
-	pr_debug("DLCS : res -> force_update = %d\n", res->force_update ? 1 : 0);
-	pr_debug("DLCS : res -> chg_disable  = %d\n", res->disable_chg ? 1 : 0);
-	pr_debug("DLCS : res -> dc_current   = %d\n", res->dc_current);
-	pr_debug("DLCS : res -> btm_state    = %d\n", res->btm_state);
-	pr_debug("DLCS : res -> is_charger   = %d\n", req.is_charger);
-	pr_debug("DLCS : res -> pseudo_chg_ui= %d\n", res->pseudo_chg_ui);
-	pr_debug("DLCS ==============================================\n");
+	pr_err("DLCS ==============================================\n");
+//	pr_err("DLCS : dummy battery temperature  = %d\n", dummy_temp);
+	pr_err("DLCS : battery temperature states = %d\n", battemp_state);
+	pr_err("DLCS : res -> state        = %d\n", res->state);
+	pr_err("DLCS : res -> change_lvl   = %d\n", res->change_lvl);
+	pr_err("DLCS : res -> force_update = %d\n", res->force_update ? 1 : 0);
+	pr_err("DLCS : res -> chg_disable  = %d\n", res->disable_chg ? 1 : 0);
+	pr_err("DLCS : res -> dc_current   = %d\n", res->dc_current);
+	pr_err("DLCS : res -> btm_state    = %d\n", res->btm_state);
+	pr_err("DLCS : res -> is_charger   = %d\n", req.is_charger);
+	pr_err("DLCS : res -> pseudo_chg_ui= %d\n", res->pseudo_chg_ui);
+	pr_err("DLCS ==============================================\n");
 #endif
 
 #ifdef CONFIG_LGE_PM_THERMAL
-	pr_debug("LGE charging scenario : state %d -> %d(%d-%d),"\
+	pr_err("LGE charging scenario : state %d -> %d(%d-%d),"\
 		" temp=%d, volt=%d, BTM=%d, charger=%d, cur_set=%d/%d\n",
 		pre_state, charging_state, res->change_lvl, res->force_update ? 1 : 0,
 		req.batt_temp, req.batt_volt / 1000, res->btm_state, req.is_charger,
 		req.chg_current_te, res->dc_current);
 #else
-	pr_debug("LGE charging scenario : Change state "\
+	pr_err("LGE charging scenario : Change state "\
 		"%d -> %d(%d-%d), temp=%d, volt=%d, BTM=%d, charger=%d\n",
 		pre_state, charging_state, states_change,
 		res->force_update ? 1 : 0, req.batt_temp, req.batt_volt / 1000,

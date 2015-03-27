@@ -28,6 +28,10 @@
 #include "mdss_panel.h"
 #include "mdss_debug.h"
 
+#ifdef CONFIG_FB_MSM_MIPI_LGD_LH500WX9_VIDEO_HD_PT_PANEL
+#include "mdss_debug.h"
+#endif
+
 #define VSYNC_PERIOD 17
 
 struct mdss_dsi_ctrl_pdata *ctrl_list[DSI_CTRL_MAX];
@@ -270,6 +274,9 @@ void mdss_dsi_host_init(struct mdss_panel_data *pdata)
 		data |= ((pinfo->traffic_mode & 0x03) << 8);
 		data |= ((pinfo->dst_format & 0x03) << 4); /* 2 bits */
 		data |= (pinfo->vc & 0x03);
+#if defined(CONFIG_FB_MSM_MIPI_LGD_VIDEO_WVGA_PT_INCELL_PANEL)
+		data |= BIT(31);
+#endif
 		MIPI_OUTP((ctrl_pdata->ctrl_base) + 0x0010, data);
 
 		data = 0;
@@ -326,8 +333,16 @@ void mdss_dsi_host_init(struct mdss_panel_data *pdata)
 	if (mdss_dsi_broadcast_mode_enabled())
 		MIPI_OUTP(ctrl_pdata->ctrl_base + 0x3C, 0x94000000);
 	else
+#if defined(CONFIG_FB_MSM_MIPI_LGD_LH500WX9_VIDEO_HD_PT_PANEL)
+		MIPI_OUTP(ctrl_pdata->ctrl_base + 0x3C, 0x10000000);
+#else
 		MIPI_OUTP(ctrl_pdata->ctrl_base + 0x3C, 0x14000000);
+#endif
 
+#if defined(CONFIG_FB_MSM_MIPI_LGD_VIDEO_WVGA_PT_INCELL_PANEL)
+	MIPI_OUTP(ctrl_pdata->ctrl_base + 0xBC, 0xFFFFF);
+	MIPI_OUTP(ctrl_pdata->ctrl_base + 0xC0, 0x111);
+#endif
 	data = 0;
 	if (pinfo->te_sel)
 		data |= BIT(31);
@@ -1090,8 +1105,11 @@ end:
 	return rp->len;
 }
 
+#ifdef CONFIG_FB_MSM_MIPI_LGD_LH500WX9_VIDEO_HD_PT_PANEL
+#define DMA_TX_TIMEOUT 20000
+#else
 #define DMA_TX_TIMEOUT 200
-
+#endif
 static int mdss_dsi_cmd_dma_tx(struct mdss_dsi_ctrl_pdata *ctrl,
 					struct dsi_buf *tp)
 {
@@ -1115,7 +1133,6 @@ static int mdss_dsi_cmd_dma_tx(struct mdss_dsi_ctrl_pdata *ctrl,
 			pr_err("unable to map dma memory to iommu(%d)\n", ret);
 			return -ENOMEM;
 		}
-		ctrl->dmap_iommu_map = true;
 	} else {
 		addr = tp->dmap;
 	}
@@ -1152,11 +1169,9 @@ static int mdss_dsi_cmd_dma_tx(struct mdss_dsi_ctrl_pdata *ctrl,
 	else
 		ret = tp->len;
 
-	if (ctrl->dmap_iommu_map) {
+	if (is_mdss_iommu_attached())
 		msm_iommu_unmap_contig_buffer(addr,
 			mdss_get_iommu_domain(domain), 0, size);
-		ctrl->dmap_iommu_map = false;
-	}
 
 	return ret;
 }

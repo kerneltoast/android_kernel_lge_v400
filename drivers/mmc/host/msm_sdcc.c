@@ -5869,6 +5869,11 @@ err:
 	return NULL;
 }
 
+#if defined( CONFIG_BCMDHD )  //joon For device tree.
+extern int wcf_status_register(void (*cb)(int card_present, void *dev), void *dev);
+extern unsigned int wcf_status(struct device *);
+#endif
+
 static int
 msmsdcc_probe(struct platform_device *pdev)
 {
@@ -6242,6 +6247,16 @@ msmsdcc_probe(struct platform_device *pdev)
 	/*
 	 * Setup card detect change
 	 */
+
+#if defined( CONFIG_BCMDHD ) //joon For device tree.
+            printk("J:%s-%d> plat->nonremovable = %d\n", __FUNCTION__, host->pdev->id, plat->nonremovable );
+            if( host->pdev->id == 3 )
+            {
+			plat->register_status_notify = wcf_status_register;
+			plat->status = wcf_status;
+            }
+#endif
+        
 
 	if (!plat->status_gpio)
 		plat->status_gpio = -ENOENT;

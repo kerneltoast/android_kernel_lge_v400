@@ -330,6 +330,9 @@ static const char fsg_string_interface[] = "Mass Storage";
 #define TYPE_MOD_CHG_TO_TET     0x09
 #define TYPE_MOD_CHG_TO_FDG     0x0A
 #define TYPE_MOD_CHG_TO_PTP     0x0B
+#ifdef CONFIG_USB_G_LGE_MULTIPLE_CONFIGURATION_VZW
+#define TYPE_MOD_CHG_TO_MUL     0x0C
+#endif
 #define TYPE_MOD_CHG2_TO_ACM    0x81
 #define TYPE_MOD_CHG2_TO_UMS    0x82
 #define TYPE_MOD_CHG2_TO_MTP    0x83
@@ -338,6 +341,9 @@ static const char fsg_string_interface[] = "Mass Storage";
 #define TYPE_MOD_CHG2_TO_TET    0x87
 #define TYPE_MOD_CHG2_TO_FDG    0x88
 #define TYPE_MOD_CHG2_TO_PTP    0x89
+#ifdef CONFIG_USB_G_LGE_MULTIPLE_CONFIGURATION_VZW
+#define TYPE_MOD_CHG2_TO_MUL    0x8A
+#endif
 /* ACK TO SEND HOST PC */
 #define ACK_STATUS_TO_HOST      0x10
 #define ACK_SW_REV_TO_HOST      0x12
@@ -391,6 +397,9 @@ static char *envp_mode[][2] = {
 	{"AUTORUN=change_ptp", NULL},
 	{"AUTORUN=query_value", NULL},
 	{"AUTORUN=device_info", NULL},
+#ifdef CONFIG_USB_G_LGE_MULTIPLE_CONFIGURATION_VZW
+	{"AUTORUN=change_mul", NULL},
+#endif
 };
 #endif
 #ifdef CONFIG_USB_G_LGE_ANDROID_AUTORUN_LGE
@@ -409,6 +418,9 @@ enum chg_mode_state{
 	MODE_STATE_PTP,
 	MODE_STATE_GET_VALUE,
 	MODE_STATE_PROBE_DEV,
+#ifdef CONFIG_USB_G_LGE_MULTIPLE_CONFIGURATION_VZW
+	MODE_STATE_MUL,
+#endif
 };
 
 enum check_mode_state {
@@ -2421,6 +2433,12 @@ static int do_scsi_command(struct fsg_common *common)
 			case TYPE_MOD_CHG2_TO_PTP:
 				common->mode_state = MODE_STATE_PTP;
 				break;
+#ifdef CONFIG_USB_G_LGE_MULTIPLE_CONFIGURATION_VZW
+			case TYPE_MOD_CHG_TO_MUL:
+			case TYPE_MOD_CHG2_TO_MUL:
+				common->mode_state = MODE_STATE_MUL;
+				break;
+#endif
 			default:
 				common->mode_state = MODE_STATE_UNKNOWN;
 			}
@@ -3312,7 +3330,6 @@ static ssize_t fsg_store_usbmode(struct device *dev,
 static DEVICE_ATTR(ro, 0644, fsg_show_ro, fsg_store_ro);
 static DEVICE_ATTR(nofua, 0644, fsg_show_nofua, fsg_store_nofua);
 static DEVICE_ATTR(file, 0644, fsg_show_file, fsg_store_file);
-static DEVICE_ATTR(cdrom, 0644, fsg_show_cdrom, fsg_store_cdrom);
 #ifdef CONFIG_USB_MSC_PROFILING
 static DEVICE_ATTR(perf, 0644, fsg_show_perf, fsg_store_perf);
 #endif
@@ -3444,9 +3461,6 @@ static struct fsg_common *fsg_common_init(struct fsg_common *common,
 		if (rc)
 			goto error_luns;
 		rc = device_create_file(&curlun->dev, &dev_attr_nofua);
-		if (rc)
-			goto error_luns;
-		rc = device_create_file(&curlun->dev, &dev_attr_cdrom);
 		if (rc)
 			goto error_luns;
 #ifdef CONFIG_USB_MSC_PROFILING
@@ -3605,7 +3619,6 @@ static void fsg_common_release(struct kref *ref)
 #ifdef CONFIG_USB_MSC_PROFILING
 			device_remove_file(&lun->dev, &dev_attr_perf);
 #endif
-			device_remove_file(&lun->dev, &dev_attr_cdrom);
 			device_remove_file(&lun->dev, &dev_attr_nofua);
 			device_remove_file(&lun->dev, &dev_attr_ro);
 			device_remove_file(&lun->dev, &dev_attr_file);

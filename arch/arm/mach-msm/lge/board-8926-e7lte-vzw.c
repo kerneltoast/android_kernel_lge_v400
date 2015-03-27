@@ -70,11 +70,6 @@ static struct memtype_reserve msm8226_reserve_table[] __initdata = {
 	},
 };
 
-#if defined ( CONFIG_BCMDHD ) 
-extern void init_bcm_wifi(void);
-#endif
-
-
 static int msm8226_paddr_to_memtype(unsigned int paddr)
 {
 	return MEMTYPE_EBI1;
@@ -167,6 +162,38 @@ void __init lge_add_lcd_kcal_devices(void)
 	platform_device_register(&kcal_platrom_device);
 }
 #endif
+
+#if defined(CONFIG_PRE_SELF_DIAGNOSIS)
+int pre_selfd_set_values(int kcal_r, int kcal_g, int kcal_b)
+{
+	return 0;
+}
+
+static int pre_selfd_get_values(int *kcal_r, int *kcal_g, int *kcal_b)
+{
+	return 0;
+}
+
+static struct pre_selfd_platform_data pre_selfd_pdata = {
+	.set_values = pre_selfd_set_values,
+	.get_values = pre_selfd_get_values,
+};
+
+
+static struct platform_device pre_selfd_platrom_device = {
+	.name   = "pre_selfd_ctrl",
+	.dev = {
+		.platform_data = &pre_selfd_pdata,
+	}
+};
+
+void __init lge_add_pre_selfd_devices(void)
+{
+	pr_info(" PRE_SELFD_DEBUG : %s\n", __func__);
+	platform_device_register(&pre_selfd_platrom_device);
+}
+#endif /* CONFIG_PRE_SELF_DIAGNOSIS */
+
 /*
  * Used to satisfy dependencies for devices that need to be
  * run early or in a particular order. Most likely your device doesn't fall
@@ -201,9 +228,6 @@ void __init msm8226_add_drivers(void)
 	 #if defined(CONFIG_LCD_KCAL)
 	 lge_add_lcd_kcal_devices();
 #endif
-#if defined ( CONFIG_BCMDHD ) 
-	init_bcm_wifi();
-#endif
 
 #ifdef CONFIG_LGE_QFPROM_INTERFACE
 	lge_add_qfprom_devices();
@@ -213,6 +237,9 @@ void __init msm8226_add_drivers(void)
     lge_add_mmc_strength_devices();
 #endif
 
+#if defined(CONFIG_PRE_SELF_DIAGNOSIS)
+	lge_add_pre_selfd_devices();
+#endif
 }
 
 void __init msm8226_init(void)

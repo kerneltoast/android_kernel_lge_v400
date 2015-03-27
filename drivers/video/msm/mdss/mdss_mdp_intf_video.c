@@ -24,6 +24,15 @@
 #include "mdss_debug.h"
 #include "mdss_mdp_trace.h"
 
+#if defined(CONFIG_LGE_MIPI_TOVIS_VIDEO_540P_PANEL) || defined(CONFIG_FB_MSM_MIPI_TIANMA_VIDEO_QHD_PT_PANEL) || defined(CONFIG_FB_MSM_MIPI_LGIT_LH470WX1_VIDEO_HD_PT_PANEL) || defined(CONFIG_FB_MSM_MIPI_TOVIS_LM570HN1A_VIDEO_HD_PT_PANEL) || defined(CONFIG_FB_MSM_MIPI_LGD_LH500WX9_VIDEO_HD_PT_PANEL) || defined(CONFIG_FB_MSM_MIPI_JDI_R69338_VIDEO_HD_PANEL)
+extern int has_dsv_f;
+#endif
+
+#if defined(CONFIG_FB_MSM_MIPI_LGD_VIDEO_WVGA_PT_INCELL_PANEL)
+extern int has_dsv_f;
+int is_dsv_cont_splash_screening_f;
+#endif
+
 /* wait for at least 2 vsyncs for lowest refresh rate (24hz) */
 #define VSYNC_TIMEOUT_US 100000
 
@@ -759,7 +768,10 @@ static int mdss_mdp_video_display(struct mdss_mdp_ctl *ctl, void *arg)
 
 	return 0;
 }
-
+#if defined(CONFIG_FB_MSM_MIPI_JDI_R69338_VIDEO_HD_PANEL)
+extern int jdi_init_sequence;
+int mdss_dsi_touch_cmd(int num);
+#endif
 int mdss_mdp_video_reconfigure_splash_done(struct mdss_mdp_ctl *ctl,
 	bool handoff)
 {
@@ -779,6 +791,12 @@ int mdss_mdp_video_reconfigure_splash_done(struct mdss_mdp_ctl *ctl,
 	}
 
 	if (!handoff) {
+#if defined(CONFIG_FB_MSM_MIPI_LGD_VIDEO_WVGA_PT_INCELL_PANEL)
+		if (has_dsv_f) {
+			is_dsv_cont_splash_screening_f = 1;
+		}
+#endif
+
 		ret = mdss_mdp_ctl_intf_event(ctl, MDSS_EVENT_CONT_SPLASH_BEGIN,
 					      NULL);
 		if (ret) {
@@ -795,10 +813,20 @@ int mdss_mdp_video_reconfigure_splash_done(struct mdss_mdp_ctl *ctl,
 
 		ret = mdss_mdp_ctl_intf_event(ctl,
 			MDSS_EVENT_CONT_SPLASH_FINISH, NULL);
+
+#if defined(CONFIG_FB_MSM_MIPI_LGD_VIDEO_WVGA_PT_INCELL_PANEL)
+		if (has_dsv_f) {
+			is_dsv_cont_splash_screening_f = 0;
+		}
+#endif
 	}
 
 error:
 	pdata->panel_info.cont_splash_enabled = 0;
+#if defined(CONFIG_FB_MSM_MIPI_JDI_R69338_VIDEO_HD_PANEL)
+if (jdi_init_sequence != 1)
+	mdss_dsi_touch_cmd(2);
+#endif
 	return ret;
 }
 

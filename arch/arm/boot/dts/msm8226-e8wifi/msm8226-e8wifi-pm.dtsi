@@ -428,7 +428,7 @@
 		usb_adc_table@200{
 			status = "okay";
 			lge,no-init-cable = <197000 500 500>;
-			lge,cable-56k = <496875 1500 1500>;
+			lge,cable-56k = <496875 500 500>;
 			lge,cable-100k = <654545 500 500>;
 			lge,cable-130k = <780861 1500 1500>;
 			lge,cable-180k = <876316 1300 500>;
@@ -446,14 +446,15 @@
 
 &pm8226_chg {
 	status = "ok";
-	qcom,vddmax-mv = <4220>;
-	qcom,vddsafe-mv = <4250>;
+	qcom,vddmax-mv = <4230>;
+	qcom,vddsafe-mv = <4260>;
 	qcom,ibatmax-ma = <1300>;
 	qcom,thermal-mitigation = <1300 700 600 325>;
-	qcom,vinmin-mv = <4220>;
+	qcom,vinmin-mv = <4230>;
 	qcom,ibatterm-ma = <200>;
 	qcom,vbatdet-delta-mv = <100>;
 	qcom,tchg-mins = <480>;
+	qcom,btc-disabled = <1>;
 	qcom,ext-ovp-present = <1>;
 
 	/* If you want to enable external OVP, use below GPIO_2 setting */

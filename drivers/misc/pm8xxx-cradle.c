@@ -5,7 +5,6 @@
 
 #include <linux/module.h>
 #include <linux/init.h>
-#include <linux/input.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/interrupt.h>
@@ -32,17 +31,23 @@ struct pm8xxx_cradle {
 	int state;
 };
 
-#if defined(CONFIG_MACH_MSM8X10_W5_MPCS_US) || defined(CONFIG_MACH_MSM8X10_W5C_VZW) || defined(CONFIG_MACH_MSM8X10_W5_AIO_US) || defined(CONFIG_MACH_MSM8X10_W5C_SPR_US) || defined(CONFIG_MACH_MSM8X10_W5_TRF_US) || defined(CONFIG_MACH_MSM8X10_W5C_TRF_US) || defined(CONFIG_MACH_MSM8X10_W5_CCA_US) || \
-    defined(CONFIG_MACH_MSM8226_E7WIFI) || defined(CONFIG_MACH_MSM8226_E8WIFI) || defined(CONFIG_MACH_MSM8226_E9WIFI) || defined(CONFIG_MACH_MSM8226_E9WIFIN)||defined(CONFIG_MACH_MSM8926_E7LTE_VZW_US) || defined(CONFIG_MACH_MSM8926_E7LTE_ATT_US)
+#if defined(CONFIG_MACH_MSM8X10_W5_MPCS_US) || defined(CONFIG_MACH_MSM8X10_W5C_VZW) || \
+    defined(CONFIG_MACH_MSM8X10_W5_AIO_US) || defined(CONFIG_MACH_MSM8X10_W5C_SPR_US) || \
+    defined(CONFIG_MACH_MSM8X10_W5_TRF_US) || defined(CONFIG_MACH_MSM8X10_W5C_TRF_US) || \
+    defined(CONFIG_MACH_MSM8X10_W5_CCA_US) || defined(CONFIG_MACH_MSM8226_E7WIFI) || \
+    defined(CONFIG_MACH_MSM8226_E8WIFI) || defined(CONFIG_MACH_MSM8926_E8LTE) || \
+    defined(CONFIG_MACH_MSM8226_E9WIFI) || defined(CONFIG_MACH_MSM8226_E9WIFIN)|| \
+    defined(CONFIG_MACH_MSM8926_E7LTE_VZW_US) || defined(CONFIG_MACH_MSM8926_E7LTE_ATT_US) || \
+	defined(CONFIG_MACH_MSM8926_E7LTE_USC_US) || defined(CONFIG_MACH_MSM8926_B2LN_KR) || \
+	defined(CONFIG_MACH_MSM8926_E9LTE_VZW_US)
 #define POUCH_DETECT_DELAY 100
 #endif
 
 static struct workqueue_struct *cradle_wq;
 static struct pm8xxx_cradle *cradle;
-static struct input_dev *cradle_input;
-
-#if defined(CONFIG_MACH_MSM8926_X10_VZW) || defined(CONFIG_MACH_MSM8926_B2L_ATT) || defined(CONFIG_MACH_MSM8926_B2LN_KR)
-#ifdef CONFIG_TOUCHSCREEN_ATMEL_S540 
+#if defined(CONFIG_MACH_MSM8926_X10_VZW) || defined(CONFIG_MACH_MSM8926_B2L_ATT) || \
+    defined(CONFIG_MACH_MSM8926_B2LN_KR)
+#ifdef CONFIG_TOUCHSCREEN_ATMEL_S540
 static int is_smart_cover_closed = 0; /* check status of smart cover to resize quick window area */
 int cradle_smart_cover_status(void)
 {
@@ -69,10 +74,6 @@ static void boot_cradle_det_func(void)
 	cradle->state = state;
 	wake_lock_timeout(&cradle->wake_lock, msecs_to_jiffies(3000));
 	switch_set_state(&cradle->sdev, cradle->state);
-
-	input_report_switch(cradle_input, SW_LID,
-	        cradle->state == SMARTCOVER_POUCH_OPENED ? 0 : 1);
-	input_sync(cradle_input);
 }
 
 static void pm8xxx_pouch_work_func(struct work_struct *work)
@@ -98,16 +99,13 @@ static void pm8xxx_pouch_work_func(struct work_struct *work)
 		wake_lock_timeout(&cradle->wake_lock, msecs_to_jiffies(3000));
 		switch_set_state(&cradle->sdev, cradle->state);
 		printk("%s : [Cradle] pouch value is %d\n", __func__ , state);
-		input_report_switch(cradle_input, SW_LID,
-		        cradle->state == SMARTCOVER_POUCH_OPENED ? 0 : 1);
-		input_sync(cradle_input);
 	}
 	else {
 		spin_unlock_irqrestore(&cradle->lock, flags);
 		printk("%s : [Cradle] pouch value is %d (no change)\n", __func__ , state);
 	}
-#if defined(CONFIG_MACH_MSM8926_X10_VZW) || defined(CONFIG_MACH_MSM8926_B2L_ATT) || defined(CONFIG_MACH_MSM8926_B2LN_KR)
-#ifdef CONFIG_TOUCHSCREEN_ATMEL_S540 
+#if defined(CONFIG_MACH_MSM8926_B2LN_KR)
+#ifdef CONFIG_TOUCHSCREEN_ATMEL_S540
 	is_smart_cover_closed = state;
 #endif
 #endif
@@ -143,16 +141,25 @@ int cradle_get_deskdock(void)
 
 static irqreturn_t pm8xxx_pouch_irq_handler(int irq, void *handle)
 {
+#if !defined(CONFIG_MACH_MSM8926_X10_VZW) && !defined(CONFIG_MACH_MSM8926_B2L_ATT)
 	struct pm8xxx_cradle *cradle_handle = handle;
 	int v = 200;
 	printk("pouch irq!!!!\n");
-#if defined(CONFIG_MACH_MSM8X10_W5_MPCS_US) || defined(CONFIG_MACH_MSM8X10_W5C_VZW) || defined(CONFIG_MACH_MSM8X10_W5_AIO_US) || defined(CONFIG_MACH_MSM8X10_W5C_SPR_US) || defined(CONFIG_MACH_MSM8X10_W5_TRF_US) || defined(CONFIG_MACH_MSM8X10_W5C_TRF_US) || defined(CONFIG_MACH_MSM8X10_W5_CCA_US) || \
-    defined(CONFIG_MACH_MSM8226_E7WIFI) || defined(CONFIG_MACH_MSM8226_E8WIFI) ||  defined(CONFIG_MACH_MSM8226_E9WIFI) || defined(CONFIG_MACH_MSM8226_E9WIFIN)||defined(CONFIG_MACH_MSM8926_E7LTE_VZW_US) || defined(CONFIG_MACH_MSM8926_E7LTE_ATT_US)
+#if defined(CONFIG_MACH_MSM8X10_W5_MPCS_US) || defined(CONFIG_MACH_MSM8X10_W5C_VZW) || \
+    defined(CONFIG_MACH_MSM8X10_W5_AIO_US) || defined(CONFIG_MACH_MSM8X10_W5C_SPR_US) || \
+    defined(CONFIG_MACH_MSM8X10_W5_TRF_US) || defined(CONFIG_MACH_MSM8X10_W5C_TRF_US) || \
+    defined(CONFIG_MACH_MSM8X10_W5_CCA_US) || defined(CONFIG_MACH_MSM8226_E7WIFI) || \
+    defined(CONFIG_MACH_MSM8226_E8WIFI) || defined(CONFIG_MACH_MSM8926_E8LTE) || \
+    defined(CONFIG_MACH_MSM8226_E9WIFI) || defined(CONFIG_MACH_MSM8226_E9WIFIN) || \
+    defined(CONFIG_MACH_MSM8926_E7LTE_VZW_US) || defined(CONFIG_MACH_MSM8926_E7LTE_ATT_US) || \
+	defined(CONFIG_MACH_MSM8926_E7LTE_USC_US) || defined(CONFIG_MACH_MSM8926_B2LN_KR) || \
+	defined(CONFIG_MACH_MSM8926_E9LTE_VZW_US)
 	v = 1 + 1*(!gpio_get_value(cradle->pdata->hallic_pouch_detect_pin));
 	wake_lock_timeout(&cradle->wake_lock, msecs_to_jiffies(POUCH_DETECT_DELAY*v+5));
 	queue_delayed_work(cradle_wq, &cradle_handle->pouch_work, msecs_to_jiffies(POUCH_DETECT_DELAY*v+5));
 #else
 	queue_delayed_work(cradle_wq, &cradle_handle->pouch_work, msecs_to_jiffies(v));
+#endif
 #endif
 	return IRQ_HANDLED;
 }
@@ -256,8 +263,11 @@ static int __devinit pm8xxx_cradle_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	cradle->pdata	= pdata;
-
+#ifdef CONFIG_MACH_MSM8926_VFP_KR
+	cradle->sdev.name = "folderstatus";
+#else
 	cradle->sdev.name = "smartcover";
+#endif
 	cradle->sdev.print_name = cradle_print_name;
 	cradle->pouch = 0;
 
@@ -386,39 +396,10 @@ static struct platform_driver pm8xxx_cradle_driver = {
 	},
 };
 
-static int cradle_input_device_create(void){
-	int err = 0;
-
-	cradle_input = input_allocate_device();
-	if (!cradle_input) {
-		err = -ENOMEM;
-		goto exit;
-	}
-
-	cradle_input->name = "smartcover";
-	cradle_input->phys = "/dev/input/smartcover";
-
-	set_bit(EV_SW, cradle_input->evbit);
-	set_bit(SW_LID, cradle_input->swbit);
-
-	err = input_register_device(cradle_input);
-	if (err) {
-		goto exit_free;
-	}
-	return 0;
-
-exit_free:
-	input_free_device(cradle_input);
-	cradle_input = NULL;
-exit:
-	return err;
-}
-
 static int __init pm8xxx_cradle_init(void)
 {
-	cradle_input_device_create();
 	cradle_wq = create_singlethread_workqueue("cradle_wq");
-	printk(KERN_ERR "cradle init \n");
+       printk(KERN_ERR "cradle init \n");
 	if (!cradle_wq)
 		return -ENOMEM;
 	return platform_driver_register(&pm8xxx_cradle_driver);
@@ -429,7 +410,6 @@ static void __exit pm8xxx_cradle_exit(void)
 {
 	if (cradle_wq)
 		destroy_workqueue(cradle_wq);
-	input_unregister_device(cradle_input);
 	platform_driver_unregister(&pm8xxx_cradle_driver);
 }
 module_exit(pm8xxx_cradle_exit);

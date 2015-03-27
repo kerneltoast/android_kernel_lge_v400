@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2015, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -26,6 +26,7 @@
 
 	memory {
 		secure_mem: secure_region {
+			status = "ok";
 			linux,contiguous-region;
 			reg = <0 0x6D00000>;
 			label = "secure_mem";
@@ -282,8 +283,9 @@
 		qcom,hsusb-otg-phy-type = <2>;
 		qcom,hsusb-otg-mode = <1>;
 		qcom,hsusb-otg-otg-control = <2>;
+		qcom,hsusb-otg-disable-reset;
 		qcom,dp-manual-pullup;
-		qcom,ahb-async-bridge-bypass;
+		qcom,usbin-vadc = <&pm8226_vadc>;
 
 		qcom,msm-bus,name = "usb";
 		qcom,msm-bus,num-cases = <3>;
@@ -297,39 +299,48 @@
 	android_usb: android_usb@fe8050c8 {
 		compatible = "qcom,android-usb";
 		reg = <0xfe8050c8 0xc8>;
-		qcom,android-usb-swfi-latency = <1>;
-		qcom,streaming-func = "rndis", "ecm", "mtp";
+		qcom,pm-qos-latency = <2 1001 12701>;
+		qcom,streaming-func = "rndis";
+		qcom,android-usb-uicc-nluns = <1>;
 	};
 
-	hsic_host: hsic@f9a00000 {
+	smsc_hub: hsic_hub {
 		status = "disabled";
-		compatible = "qcom,hsic-host";
-		reg = <0xf9a00000 0x400>;
-		#address-cells = <0>;
-		interrupt-parent = <&hsic_host>;
-		interrupts = <0 1 2>;
-		#interrupt-cells = <1>;
-		interrupt-map-mask = <0xffffffff>;
-		interrupt-map = <0 &intc 0 136 0
-			1 &intc 0 148 0
-			2 &msmgpio 115 0x8>;
-		interrupt-names = "core_irq", "async_irq", "wakeup";
-		hsic_vdd_dig-supply = <&pm8226_s1_corner>;
-		HSIC_GDSC-supply = <&gdsc_usb_hsic>;
-		hsic,strobe-gpio = <&msmgpio 115 0x00>;
-		hsic,data-gpio = <&msmgpio 116 0x00>;
-		hsic,ignore-cal-pad-config;
-		hsic,strobe-pad-offset = <0x2050>;
-		hsic,data-pad-offset = <0x2054>;
-		qcom,phy-susp-sof-workaround;
-		hsic,vdd-voltage-level = <1 5 7>;
+		compatible = "qcom,hsic-smsc-hub";
+		smsc,model-id = <0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
 
-		qcom,msm-bus,name = "hsic";
-		qcom,msm-bus,num-cases = <2>;
-		qcom,msm-bus,num-paths = <1>;
-		qcom,msm-bus,vectors-KBps =
+		hsic_host: hsic@f9a00000 {
+			compatible = "qcom,hsic-host";
+			reg = <0xf9a00000 0x400>;
+			#address-cells = <0>;
+			interrupt-parent = <&hsic_host>;
+			interrupts = <0 1 2>;
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0xffffffff>;
+			interrupt-map = <0 &intc 0 136 0
+				1 &intc 0 148 0
+				2 &msmgpio 115 0x8>;
+			interrupt-names = "core_irq", "async_irq", "wakeup";
+			hsic_vdd_dig-supply = <&pm8226_s1_corner>;
+			HSIC_GDSC-supply = <&gdsc_usb_hsic>;
+			hsic,strobe-gpio = <&msmgpio 115 0x00>;
+			hsic,data-gpio = <&msmgpio 116 0x00>;
+			hsic,ignore-cal-pad-config;
+			hsic,strobe-pad-offset = <0x2050>;
+			hsic,data-pad-offset = <0x2054>;
+			qcom,phy-susp-sof-workaround;
+			hsic,vdd-voltage-level = <1 5 7>;
+
+			qcom,msm-bus,name = "hsic";
+			qcom,msm-bus,num-cases = <2>;
+			qcom,msm-bus,num-paths = <1>;
+			qcom,msm-bus,vectors-KBps =
 				<85 512 0 0>,
 				<85 512 40000 160000>;
+		};
 	};
 
 	wcd9xxx_intc: wcd9xxx-irq {
@@ -406,7 +417,6 @@
 		qcom,adsp-state = <0>;
 	};
 
-/* LGE_UPDATE beekey@lge.com This's for WCD9306. WX use WCD9302.
 	sound {
 		compatible = "qcom,msm8226-audio-tapan";
 		qcom,model = "msm8226-tapan-snd-card";
@@ -417,7 +427,6 @@
 		qcom,prim-auxpcm-gpio-dout = <&msmgpio 66 0>;
 		qcom,prim-auxpcm-gpio-set = "prim-gpio-prim";
 	};
-*/	
 
 	sound-9302 {
 		compatible = "qcom,msm8226-audio-tapan";
@@ -620,13 +629,6 @@
 		qcom,msm-auxpcm-interface = "primary";
 	};
 
-	qcom,avtimer@fe053000 {
-		compatible = "qcom,avtimer";
-		reg = <0xfe053008 0x4>,
-			<0xfe05300c 0x4>;
-		reg-names = "avtimer_lsb_addr", "avtimer_msb_addr";
-	};
-
 	qcom,wcnss-wlan@fb000000 {
 		compatible = "qcom,wcnss_wlan";
 		reg = <0xfb000000 0x280000>,
@@ -651,6 +653,10 @@
 
 	qcom,msm-adsp-sensors {
 		compatible = "qcom,msm-adsp-sensors";
+		qcom,src-id = <11>;
+		qcom,dst-id = <604>;
+		qcom,ab = <32505856>;
+		qcom,ib = <32505856>;
 	};
 
 	qcom,wdt@f9017000 {
@@ -1331,6 +1337,7 @@
 		qcom,msm-bus,num-cases = <4>;
 		qcom,msm-bus,active-only = <0>;
 		qcom,msm-bus,num-paths = <1>;
+		qcom,support-fde;
 		qcom,msm-bus,vectors-KBps =
 				<55 512 0 0>,
 				<55 512 0 0>,
@@ -1346,6 +1353,7 @@
 		interrupts = <0 207 0>;
 		qcom,bam-pipe-pair = <2>;
 		qcom,ce-hw-instance = <0>;
+		qcom,ce-device = <0>;
 		qcom,ce-hw-shared;
 		qcom,msm-bus,name = "qcrypto-noc";
 		qcom,msm-bus,num-cases = <2>;
@@ -1364,6 +1372,7 @@
 		interrupts = <0 207 0>;
 		qcom,bam-pipe-pair = <1>;
 		qcom,ce-hw-instance = <0>;
+		qcom,ce-device = <0>;
 		qcom,ce-hw-shared;
 		qcom,msm-bus,name = "qcedev-noc";
 		qcom,msm-bus,num-cases = <2>;
@@ -1378,6 +1387,12 @@
 		compatible = "arm,cortex-a7-pmu";
 		qcom,irq-is-percpu;
 		interrupts = <1 7 0xf00>;
+	};
+
+	bimc_sharedmem {
+		compatible = "qcom,sharedmem-uio";
+		reg = <0xfc380000 0x00100000>;
+		reg-names = "bimc";
 	};
 };
 
@@ -1527,6 +1542,7 @@
 		qcom,hw-settle-time = <2>;
 		qcom,fast-avg-setup = <3>;
 		qcom,btm-channel-number = <0x48>;
+		qcom,meas-interval-timer-idx = <2>;
 	};
 
 	chan@8 {

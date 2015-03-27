@@ -70,6 +70,9 @@ struct tdmb_fc8080_ctrl_blk
 #endif
 	uint32							dmb_en;
 	uint32							dmb_irq;
+#ifdef CONFIG_MACH_MSM8926_VFP_KR
+	uint32							dmb_ant;
+#endif
 };
 
 static struct tdmb_fc8080_ctrl_blk fc8080_ctrl_info;
@@ -86,7 +89,8 @@ static Device_drv device_fc8080 = {
 	&broadcast_fc8080_drv_if_get_msc,
 	&broadcast_fc8080_drv_if_reset_ch,
 	&broadcast_fc8080_drv_if_user_stop,
-	&broadcast_fc8080_drv_if_select_antenna
+	&broadcast_fc8080_drv_if_select_antenna,
+	&broadcast_fc8080_drv_if_is_on
 };
 
 #if 0
@@ -195,8 +199,57 @@ int tdmb_fc8080_tdmb_is_on(void)
 /* EXPORT_SYMBOL() : when we use external symbol
 which is not included in current module - over kernel 2.6 */
 //EXPORT_SYMBOL(tdmb_fc8080_tdmb_is_on);
+/*[BCAST002][S] 20140804 seongeun.jin - modify chip init check timing issue on BLT*/
+#ifdef FEATURE_POWER_ON_RETRY
+int tdmb_fc8080_power_on_retry(void)
+{
+	int res;
+	int i;
+
+	tdmb_fc8080_interrupt_lock();
+
+	for(i = 0 ; i < 10; i++)
+	{
+		printk("[FC8080] tdmb_fc8080_power_on_retry :  %d\n", i);
+#ifdef FEATURE_DMB_USE_XO
+		if(fc8080_ctrl_info.clk != NULL) {
+			clk_disable_unprepare(fc8080_ctrl_info.clk);
+			printk("[FC8080] retry clk_disable %d\n", i);
+		}
+		else
+			printk("[FC8080] ERR fc8080_ctrl_info.clkdis is NULL\n");
+#endif
+		gpio_set_value(fc8080_ctrl_info.dmb_en, 0);
+		mdelay(150);
 
 
+		gpio_set_value(fc8080_ctrl_info.dmb_en, 1);
+		mdelay(5);
+#ifdef FEATURE_DMB_USE_XO
+		if(fc8080_ctrl_info.clk != NULL) {
+			res = clk_prepare_enable(fc8080_ctrl_info.clk);
+			if (res) {
+				printk("[FC8080] retry clk_prepare_enable fail %d\n", i);
+			}
+		}
+		else
+			printk("[FC8080] ERR fc8080_ctrl_info.clken is NULL\n");
+#endif
+		mdelay(30);
+
+		res = bbm_com_probe(NULL);
+
+		if (!res)
+			break;
+
+	}
+
+	tdmb_fc8080_interrupt_free();
+
+	return res;
+}
+#endif
+/*[BCAST002][E]*/
 int tdmb_fc8080_power_on(void)
 {
 	int rc = FALSE;
@@ -232,6 +285,9 @@ int tdmb_fc8080_power_on(void)
 #endif
 //		gpio_set_value(PM8058_GPIO_PM_TO_SYS(DMB_ANT_SEL_P-1), 0);
 //		gpio_set_value(PM8058_GPIO_PM_TO_SYS(DMB_ANT_SEL_N-1), 1);
+#ifdef CONFIG_MACH_MSM8926_VFP_KR
+		gpio_set_value(fc8080_ctrl_info.dmb_ant, 0);
+#endif
 
 		mdelay(30); /* Due to X-tal stablization Time */
 
@@ -272,6 +328,9 @@ int tdmb_fc8080_power_off(void)
 
 //		gpio_set_value(PM8058_GPIO_PM_TO_SYS(DMB_ANT_SEL_P-1), 1);	// for ESD TEST
 //		gpio_set_value(PM8058_GPIO_PM_TO_SYS(DMB_ANT_SEL_N-1), 0);
+#ifdef CONFIG_MACH_MSM8926_VFP_KR
+		gpio_set_value(fc8080_ctrl_info.dmb_ant, 1);
+#endif
 
 #ifdef FEATURE_DMB_USE_BUS_SCALE
 		msm_bus_scale_client_update_request(fc8080_ctrl_info.bus_scale_client_id, 0); /* expensive call, index:0 is the <84 512 0 0> entry */
@@ -305,7 +364,7 @@ static struct of_device_id tdmb_spi_table[] = {
 
 static struct spi_driver broadcast_tdmb_driver = {
 	.probe = broadcast_tdmb_fc8080_probe,
-	.remove	= __devexit_p(broadcast_tdmb_fc8080_remove),
+	.remove	= __broadcast_dev_exit_p(broadcast_tdmb_fc8080_remove),
 	.suspend = broadcast_tdmb_fc8080_suspend,
 	.resume  = broadcast_tdmb_fc8080_resume,
 	.driver = {
@@ -354,7 +413,7 @@ int tdmb_fc8080_spi_write_read(uint8* tx_data, int tx_length, uint8 *rx_data, in
 
 	if (fc8080_ctrl_info.spi_ptr == NULL)
 	{
-		printk("tdmb_fc8080_spi_write_read error txdata=0x%x, length=%d\n", (unsigned int)tx_data, tx_length+rx_length);
+		printk("tdmb_fc8080_spi_write_read error txdata=0x%x, length=%d\n", (UDynamic_32_64)tx_data, tx_length+rx_length);
 		return FALSE;
 	}
 
@@ -468,6 +527,17 @@ static int tdmb_configure_gpios(void)
 		err_count++;
 		printk("%s:Failed GPIO DMB_INT_N request!!!\n",__func__);
 	}
+
+#ifdef CONFIG_MACH_MSM8926_VFP_KR
+	fc8080_ctrl_info.dmb_ant = of_get_named_gpio(fc8080_ctrl_info.pdev->dev.of_node,"tdmb-fc8080,ant-gpio",0);
+
+	rc = gpio_request(fc8080_ctrl_info.dmb_ant, "DMB_ANT");
+	if (rc < 0) {
+		err_count++;
+		printk("%s:Failed GPIO DMB_ANT request!!!\n",__func__);
+	}
+	gpio_direction_output(fc8080_ctrl_info.dmb_ant,0);
+#endif
 
 	gpio_direction_output(fc8080_ctrl_info.dmb_en, 0);
 	gpio_direction_input(fc8080_ctrl_info.dmb_irq);
@@ -615,7 +685,7 @@ static int broadcast_tdmb_fc8080_check_chip_id(void)
 	return rc;
 }
 #endif
-int __devinit broadcast_tdmb_fc8080_drv_init(void)
+int __broadcast_dev_init broadcast_tdmb_fc8080_drv_init(void)
 {
 	int rc;
 

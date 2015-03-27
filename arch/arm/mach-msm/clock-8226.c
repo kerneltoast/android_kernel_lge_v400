@@ -3154,8 +3154,19 @@ static struct clk_lookup msm_clocks_8226[] = {
 	CLK_LOOKUP("mem_clk",    gcc_boot_rom_ahb_clk.c, "fc880000.qcom,mss"),
 
 	/* NFC */
-	CLK_LOOKUP("ref_clk",            cxo_d1_a_pin.c, ""),
-	CLK_LOOKUP("ref_clk",            cxo_d1_pin.c, "2-000e"),
+	//CLK_LOOKUP("ref_clk",            cxo_d1_a_pin.c, "2-000e"),
+
+/*                                   */
+#if defined(CONFIG_LGE_NFC_PN544_C3) || defined(CONFIG_LGE_NFC_PN547_C2)
+	CLK_LOOKUP("xo",	   cxo_d1_pin.c,			"nfc_nxp"),
+#endif
+/*                                   */
+
+/*                                                          */
+#if defined(CONFIG_LGE_BROADCAST_TDMB)
+	CLK_LOOKUP("xo",	cxo_a1.c,		"spi0.0"),
+#endif
+/*                                                          */
 
 	/* PIL-PRONTO */
 	CLK_LOOKUP("xo", cxo_pil_pronto_clk.c, "fb21b000.qcom,pronto"),
@@ -3466,6 +3477,11 @@ static struct clk_lookup msm_clocks_8226[] = {
 	CLK_LOOKUP("cam_src_clk", mclk0_clk_src.c, "40.qcom,camera_rev_c"),
 	CLK_LOOKUP("cam_src_clk", mclk0_clk_src.c, "40.qcom,camera_rev_10"),
 #endif //CONFIG_HI543
+#ifdef CONFIG_HI544	/*                                           */
+	CLK_LOOKUP("cam_src_clk", mclk0_clk_src.c, "40.qcom,camera"),
+	CLK_LOOKUP("cam_src_clk", mclk0_clk_src.c, "40.qcom,camera_rev_b"),
+	CLK_LOOKUP("cam_src_clk", mclk0_clk_src.c, "40.qcom,camera_rev_10"),
+#endif //CONFIG_HI544
 #ifdef CONFIG_HI351	/*                                           */
 	CLK_LOOKUP("cam_src_clk", mclk0_clk_src.c, "40.qcom,camera"),
 	CLK_LOOKUP("cam_src_clk", mclk0_clk_src.c, "40.qcom,camera_rev_0"),
@@ -3473,6 +3489,9 @@ static struct clk_lookup msm_clocks_8226[] = {
 	CLK_LOOKUP("cam_src_clk", mclk0_clk_src.c, "40.qcom,camera_rev_b"),
 	CLK_LOOKUP("cam_src_clk", mclk0_clk_src.c, "40.qcom,camera_rev_10"),
 #endif //CONFIG_HI351
+#ifdef CONFIG_IMX132	/*                                            */
+	CLK_LOOKUP("cam_src_clk", mclk1_clk_src.c, "6c.qcom,camera"),
+#endif //CONFIG_IMX132
 #ifdef CONFIG_IMX119	/*                                            */
 	CLK_LOOKUP("cam_src_clk", mclk1_clk_src.c, "6e.qcom,camera"),   /*                                                   */
 	CLK_LOOKUP("cam_src_clk", mclk1_clk_src.c, "6e.qcom,camera_rev_0"),
@@ -3488,12 +3507,16 @@ static struct clk_lookup msm_clocks_8226[] = {
 	CLK_LOOKUP("cam_src_clk", mclk1_clk_src.c, "90.qcom,camera_rev_b"),
 	CLK_LOOKUP("cam_src_clk", mclk1_clk_src.c, "90.qcom,camera_rev_10"),
 #endif //CONFIG_MT9M114
-
+#ifdef CONFIG_HI258 /*                                           */
+	CLK_LOOKUP("cam_src_clk", mclk1_clk_src.c, "1-0040"),
+#endif //CONFIG_HI258
 #ifdef CONFIG_HI707 /*                                           */
 	CLK_LOOKUP("cam_src_clk", mclk1_clk_src.c, "60.qcom,camera"),
+	CLK_LOOKUP("cam_src_clk", mclk1_clk_src.c, "60.qcom,camera_rev_a"),
 	CLK_LOOKUP("cam_src_clk", mclk1_clk_src.c, "60.qcom,camera_rev_b"),
 	CLK_LOOKUP("cam_src_clk", mclk1_clk_src.c, "60.qcom,camera_rev_c"),
 	CLK_LOOKUP("cam_src_clk", mclk1_clk_src.c, "60.qcom,camera_rev_d"),
+	CLK_LOOKUP("cam_src_clk", mclk1_clk_src.c, "60.qcom,camera_rev_10"),
 #endif //CONFIG_HI707
 
 	CLK_LOOKUP("cam_clk", camss_mclk0_clk.c, "6f.qcom,camera"),
@@ -3529,6 +3552,11 @@ static struct clk_lookup msm_clocks_8226[] = {
 	CLK_LOOKUP("cam_clk", camss_mclk0_clk.c, "40.qcom,camera_rev_c"),
 	CLK_LOOKUP("cam_clk", camss_mclk0_clk.c, "40.qcom,camera_rev_10"),
 #endif //CONFIG_HI543
+#ifdef CONFIG_HI544	/*                                           */
+	CLK_LOOKUP("cam_clk", camss_mclk0_clk.c, "40.qcom,camera"),
+	CLK_LOOKUP("cam_clk", camss_mclk0_clk.c, "40.qcom,camera_rev_b"),
+	CLK_LOOKUP("cam_clk", camss_mclk0_clk.c, "40.qcom,camera_rev_10"),
+#endif //CONFIG_HI544
 #ifdef CONFIG_HI351	/*                                           */
 	CLK_LOOKUP("cam_clk", camss_mclk0_clk.c, "40.qcom,camera"),
 	CLK_LOOKUP("cam_clk", camss_mclk0_clk.c, "40.qcom,camera_rev_0"),
@@ -3536,6 +3564,9 @@ static struct clk_lookup msm_clocks_8226[] = {
 	CLK_LOOKUP("cam_clk", camss_mclk0_clk.c, "40.qcom,camera_rev_b"),
 	CLK_LOOKUP("cam_clk", camss_mclk0_clk.c, "40.qcom,camera_rev_10"),
 #endif //CONFIG_HI351
+#ifdef CONFIG_IMX132	/*                                            */
+	CLK_LOOKUP("cam_clk", camss_mclk1_clk.c, "6c.qcom,camera"),
+#endif //CONFIG_IMX132
 #ifdef CONFIG_IMX119	/*                                            */
 	CLK_LOOKUP("cam_clk", camss_mclk1_clk.c, "6e.qcom,camera"),   /*                                                   */
 	CLK_LOOKUP("cam_clk", camss_mclk1_clk.c, "6e.qcom,camera_rev_0"),
@@ -3551,12 +3582,16 @@ static struct clk_lookup msm_clocks_8226[] = {
 	CLK_LOOKUP("cam_clk", camss_mclk1_clk.c, "90.qcom,camera_rev_b"),
 	CLK_LOOKUP("cam_clk", camss_mclk1_clk.c, "90.qcom,camera_rev_10"),
 #endif //CONFIG_MT9M114
-
+#ifdef CONFIG_HI258 /*                                           */
+	CLK_LOOKUP("cam_clk", camss_mclk1_clk.c, "1-0040"),
+#endif //CONFIG_HI258
 #ifdef CONFIG_HI707 /*                                           */
 	CLK_LOOKUP("cam_clk", camss_mclk1_clk.c, "60.qcom,camera"),
+	CLK_LOOKUP("cam_clk", camss_mclk1_clk.c, "60.qcom,camera_rev_a"),
 	CLK_LOOKUP("cam_clk", camss_mclk1_clk.c, "60.qcom,camera_rev_b"),
 	CLK_LOOKUP("cam_clk", camss_mclk1_clk.c, "60.qcom,camera_rev_c"),
 	CLK_LOOKUP("cam_clk", camss_mclk1_clk.c, "60.qcom,camera_rev_d"),
+	CLK_LOOKUP("cam_clk", camss_mclk1_clk.c, "60.qcom,camera_rev_10"),
 #endif //CONFIG_HI707
 
 #if 0//FIXME_JB_MR2
@@ -3838,6 +3873,13 @@ static void __init msm8226_clock_post_init(void)
 
 	/* Set an initial rate (fmax at nominal) on the MMSSNOC AXI clock */
 	clk_set_rate(&axi_clk_src.c, 200000000);
+
+
+/*                                   */
+#if defined(CONFIG_LGE_NFC_PN544_C3) || defined(CONFIG_LGE_NFC_PN547_C2)
+	clk_prepare_enable(&cxo_d1_pin.c);
+#endif
+	/*                                  */
 
 	/* Set rates for single-rate clocks. */
 	clk_set_rate(&usb_hs_system_clk_src.c,

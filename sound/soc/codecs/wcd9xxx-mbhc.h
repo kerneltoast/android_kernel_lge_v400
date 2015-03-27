@@ -14,6 +14,9 @@
 
 #include "wcd9xxx-resmgr.h"
 #include "wcdcal-hwdep.h"
+#ifdef CONFIG_MACH_LGE
+#include <linux/switch.h>
+#endif
 
 #define WCD9XXX_CFILT_FAST_MODE 0x00
 #define WCD9XXX_CFILT_SLOW_MODE 0x40
@@ -80,6 +83,9 @@ enum wcd9xxx_mbhc_plug_type {
 	PLUG_TYPE_HIGH_HPH,
 	PLUG_TYPE_GND_MIC_SWAP,
 	PLUG_TYPE_ANC_HEADPHONE,
+#if CONFIG_MACH_LGE
+	PLUG_TYPE_LGE_AUX,
+#endif
 };
 
 enum wcd9xxx_mbhc_micbias_type {
@@ -375,6 +381,9 @@ struct wcd9xxx_mbhc {
 #endif
 
 	struct mutex mbhc_lock;
+#ifdef CONFIG_MACH_LGE
+	struct switch_dev sdev;
+#endif
 };
 
 #define WCD9XXX_MBHC_CAL_SIZE(buttons, rload) ( \

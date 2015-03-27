@@ -34,6 +34,8 @@
 #include <mach/msm_smem.h>
 #include <mach/lge_handle_panic.h>
 
+#include <mach/board_lge.h>
+
 #include "peripheral-loader.h"
 #include "pil-q6v5.h"
 #include "pil-msa.h"
@@ -59,6 +61,14 @@ struct modem_data {
 	bool ignore_errors;
 	struct completion stop_ack;
 };
+struct lge_hw_smem_id2_type {
+	uint32_t sbl_log_meta_info;
+	uint32_t lcd_maker;
+	uint32_t sbl_delta_time;
+	uint32_t secure_auth;
+	uint32_t build_info;
+	int modem_reset;
+};
 
 #define subsys_to_drv(d) container_of(d, struct modem_data, subsys_desc)
 
@@ -82,6 +92,9 @@ static void log_modem_sfr(void)
 
 	strlcpy(reason, smem_reason, min(size, sizeof(reason)));
 	pr_err("modem subsystem failure reason: %s.\n", reason);
+#if defined(CONFIG_PRE_SELF_DIAGNOSIS)
+	lge_pre_self_diagnosis((char *) "modem",3,(char *) "modem failed",(char *) reason, 20001);
+#endif
 
 //                                      
 	strlcpy(ssr_noti, smem_reason, min(size, sizeof(ssr_noti)));
@@ -97,6 +110,32 @@ static void restart_modem(struct modem_data *drv)
 	subsystem_restart_dev(drv->subsys);
 }
 
+static int check_modem_reset(struct modem_data *drv)
+{
+	u32 size;
+	int ret = -EPERM;
+	struct lge_hw_smem_id2_type *smem_id2;
+
+	smem_id2 = smem_get_entry(SMEM_ID_VENDOR2, &size);
+
+	if (smem_id2 == NULL) {
+		pr_err("%s: smem_id2 is NULL.\n", __func__);
+		return ret;
+	}
+
+	printk("smem_id2->modem_reset : %d",smem_id2->modem_reset);
+
+	if(smem_id2->modem_reset != 1) {
+		ret = 1;
+	} else {
+		wmb();
+		drv->ignore_errors = true;
+		subsys_modem_restart();
+		ret = 0;
+	}
+	return ret;
+}
+
 static irqreturn_t modem_err_fatal_intr_handler(int irq, void *dev_id)
 {
 	struct modem_data *drv = subsys_to_drv(dev_id);
@@ -105,7 +144,13 @@ static irqreturn_t modem_err_fatal_intr_handler(int irq, void *dev_id)
 	if (drv->crash_shutdown)
 		return IRQ_HANDLED;
 
+	if (check_modem_reset(drv) == 0)
+		return IRQ_HANDLED;
+
 	pr_err("Fatal error on the modem.\n");
+#if defined(CONFIG_PRE_SELF_DIAGNOSIS)
+	lge_pre_self_diagnosis((char *) "modem",2,(char *) "modem fatal",(char *) "_", 20000);
+#endif
 	subsys_set_crash_status(drv->subsys, true);
 	restart_modem(drv);
 	return IRQ_HANDLED;
@@ -146,6 +191,10 @@ static int modem_powerup(const struct subsys_desc *subsys)
 	struct modem_data *drv = subsys_to_drv(subsys);
 	int ret;
 
+#ifdef CONFIG_MACH_LGE
+	pr_info("%s : modem is powering up\n", __func__);
+	dump_stack();
+#endif
 	if (subsys->is_not_loadable)
 		return 0;
 	/*
@@ -230,7 +279,16 @@ static irqreturn_t modem_wdog_bite_intr_handler(int irq, void *dev_id)
 	}
 	/* END : subsys_modem_restart : testmode */
 
+	if (check_modem_reset(drv) == 0) {
+		pr_err("IGNORE watchdog bite received from modem software during check_modem_reset!\n");
+		return IRQ_HANDLED;
+	}
+
 	pr_err("Watchdog bite received from modem software!\n");
+#if defined(CONFIG_PRE_SELF_DIAGNOSIS)
+	lge_pre_self_diagnosis((char *) "modem",2,(char *) "Watchdog bite Intr",(char *) "_", 20000);
+#endif
+
 	subsys_set_crash_status(drv->subsys, true);
 	restart_modem(drv);
 	return IRQ_HANDLED;
@@ -269,6 +327,13 @@ static int __devinit pil_subsys_init(struct modem_data *drv,
 					struct platform_device *pdev)
 {
 	int ret;
+#ifdef CONFIG_MACH_LGE
+	pr_info("pil_subsys_init : exter init\n");
+#endif
+
+#ifdef CONFIG_MACH_LGE
+	pr_info("pil_subsys_init : exter init\n");
+#endif
 
 	drv->subsys_desc.name = "modem";
 	drv->subsys_desc.dev = &pdev->dev;
@@ -305,6 +370,9 @@ static int __devinit pil_subsys_init(struct modem_data *drv,
 			__func__, ret);
 		goto err_irq;
 	}
+#ifdef CONFIG_MACH_LGE
+	pr_info("pil_subsys_init : exit init\n");
+#endif
 
 	return 0;
 
@@ -326,10 +394,18 @@ static int __devinit pil_mss_loadable_init(struct modem_data *drv,
 	struct property *prop;
 	int ret;
 
+#ifdef CONFIG_MACH_LGE
+	dev_info(&pdev->dev, " pil_mss_loadable init.");
+#endif
+
 	mba = devm_kzalloc(&pdev->dev, sizeof(*mba), GFP_KERNEL);
 	if (!mba)
 		return -ENOMEM;
 	drv->mba = mba;
+
+#ifdef CONFIG_MACH_LGE
+	dev_info(&pdev->dev, " pil_mss_loadable init.");
+#endif
 
 	q6 = pil_q6v5_init(pdev);
 	if (IS_ERR(q6))
@@ -403,12 +479,22 @@ static int __devinit pil_mss_loadable_init(struct modem_data *drv,
 	ret = pil_desc_init(q6_desc);
 	if (ret)
 		return ret;
+#ifdef CONFIG_MACH_LGE
+	if (q6_desc && q6_desc->name)
+		dev_info(&pdev->dev, " %s description init success",
+				q6_desc->name);
+#endif
 
 	mba_desc = &mba->desc;
 	mba_desc->name = "modem";
 	mba_desc->dev = &pdev->dev;
 	mba_desc->ops = &pil_msa_mba_ops;
 	mba_desc->owner = THIS_MODULE;
+#ifdef CONFIG_MACH_LGE
+	if (mba_desc && mba_desc->name)
+		dev_info(&pdev->dev, " %s description init success",
+				mba_desc->name);
+#endif
 
 	ret = pil_desc_init(mba_desc);
 	if (ret)
@@ -426,6 +512,13 @@ static int __devinit pil_mss_driver_probe(struct platform_device *pdev)
 {
 	struct modem_data *drv;
 	int ret, is_not_loadable;
+#ifdef CONFIG_MACH_LGE
+	dev_info(&pdev->dev, "probing\n");
+#endif
+
+#ifdef CONFIG_MACH_LGE
+	dev_info(&pdev->dev, "probing\n");
+#endif
 
 	drv = devm_kzalloc(&pdev->dev, sizeof(*drv), GFP_KERNEL);
 	if (!drv)

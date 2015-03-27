@@ -19,6 +19,14 @@
 /include/ "msm8226-jag3gss-input.dtsi"
 /include/ "msm8226-jag3gss-bt.dtsi"
 
+/{
+        memory {
+                secure_mem: secure_region {
+                        status = "disabled";
+                };
+	};
+};
+
 &soc {
 	serial@f991f000 {
 		status = "disable";
@@ -63,6 +71,12 @@
 	/* wifi */
 	qcom,wcnss-wlan@fb000000 {
 		status = "disabled";
+	};
+
+	qcom,ion {
+		qcom,ion-heap@8 { /* CP_MM HEAP */
+			status = "disabled";
+		};
 	};
 };
 
@@ -127,7 +141,7 @@
                 interrupt-map-mask = <0xffffffff>;
                 interrupt-map = <0 &intc 0 127 0
                                 1 &intc 0 223 0
-                                2 &msmgpio 34 0x3>;
+                                2 &msmgpio 35 0x3>;
                 interrupt-names = "core_irq", "bam_irq", "wlan_oob_irq";
 
                 gpios = <&msmgpio 44 0>, /* CLK */

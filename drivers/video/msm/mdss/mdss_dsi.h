@@ -159,7 +159,6 @@ enum dsi_lane_map_type {
 extern struct device dsi_dev;
 extern u32 dsi_irq;
 extern struct mdss_dsi_ctrl_pdata *ctrl_list[];
-extern unsigned int system_rev;
 
 struct dsiphy_pll_divider_config {
 	u32 clk_rate;
@@ -243,10 +242,6 @@ enum {
 #define DSI_EV_DSI_FIFO_EMPTY		0x0003
 #define DSI_EV_MDP_BUSY_RELEASE		0x80000000
 
-#if defined(CONFIG_FB_MSM_MIPI_LGD_LH500WX9_VIDEO_HD_PT_PANEL) || defined(CONFIG_FB_MSM_MIPI_JDI_R69338_VIDEO_HD_PANEL)
-#define DSI_LANE_CTRL_HS_MASK            0x10000000
-#define DSI_LANE_CTRL_LP_MASK            0x0FFFFFFF
-#endif
 struct mdss_dsi_ctrl_pdata {
 	int ndx;	/* panel_num */
 	int (*on) (struct mdss_panel_data *pdata);
@@ -286,6 +281,7 @@ struct mdss_dsi_ctrl_pdata {
 	int bklt_max;
 	int new_fps;
 	int pwm_enabled;
+	bool dmap_iommu_map;
 	struct pwm_device *pwm_bl;
 	struct dsi_drv_cm_data shared_pdata;
 	u32 pclk_rate;
@@ -303,11 +299,6 @@ struct mdss_dsi_ctrl_pdata {
 	struct dsi_panel_cmds video2cmd;
 	struct dsi_panel_cmds cmd2video;
 
-#if defined(CONFIG_FB_MSM_MIPI_JDI_R69338_VIDEO_HD_PANEL)
-    struct dsi_panel_cmds touch_cmd1;
-    struct dsi_panel_cmds touch_cmd2;
-#endif
-
 	struct dcs_cmd_list cmdlist;
 	struct completion dma_comp;
 	struct completion mdp_comp;
@@ -323,32 +314,6 @@ struct mdss_dsi_ctrl_pdata {
 
 	struct dsi_buf tx_buf;
 	struct dsi_buf rx_buf;
-
-#if defined(CONFIG_MACH_MSM8926_AKA_CN) || defined(CONFIG_MACH_MSM8926_AKA_KR)
-	int resx2_gpio;
-#endif
-#if defined(CONFIG_LGE_MIPI_DSI_LGD_NT35521_WXGA)
-	int lcd_pm_en_gpio;
-	int bl_en_gpio;
-	int lcd_dsv_enp_gpio;
-	int lcd_dsv_enn_gpio;
-#elif defined(CONFIG_LGE_MIPI_DSI_LGD_LVDS_WXGA)
-	int lcd_stby_gpio;
-	int bl_vled_gpio;
-	int bl_pwm_gpio;
-	int bl_en_gpio;
-#ifdef CONFIG_MACH_MSM8926_E9LTE
-	int lcd_1v8_gpio;
-#endif // CONFIG_MACH_MSM8926_E9LTE
-#elif defined(CONFIG_FB_MSM_MIPI_TOVIS_LM570HN1A_VIDEO_HD_PT_PANEL) || defined (CONFIG_FB_MSM_MIPI_JDI_R69338_VIDEO_HD_PANEL)
-	int lcd_dsv_enp_gpio;
-#elif defined(CONFIG_FB_MSM_MIPI_LGD_VIDEO_WVGA_PT_INCELL_PANEL)
-	int disp_fd_gpio;
-	int disp_iovcc_gpio;
-	int disp_p_mode;
-	int disp_en_1st_gpio;
-	int disp_en_2nd_gpio;
-#endif
 	struct dsi_buf status_buf;
 	int status_mode;
 };
@@ -427,18 +392,6 @@ static inline bool mdss_dsi_broadcast_mode_enabled(void)
 		ctrl_list[DSI_CTRL_SLAVE] &&
 		ctrl_list[DSI_CTRL_SLAVE]->shared_pdata.broadcast_enable;
 }
-
-#if defined(CONFIG_LGE_MIPI_DSI_LGD_LVDS_WXGA)
-int lge_lvds_panel_power(struct mdss_panel_data *pdata, int enable);
-#ifdef CONFIG_MACH_MSM8926_E9LTE
-int lge_lvds_1v8_power(struct mdss_panel_data *pdata, int enable);
-#endif // CONFIG_MACH_MSM8926_E9LTE
-#endif
-
-#if defined(CONFIG_LGE_MIPI_DSI_LGD_NT35521_WXGA)
-/*int nt51012_panel_power(struct mdss_panel_data *pdata, int enable);*/
-int nt35521_panel_power(struct mdss_panel_data *pdata, int enable);
-#endif
 
 static inline struct mdss_dsi_ctrl_pdata *mdss_dsi_get_master_ctrl(void)
 {

@@ -208,15 +208,7 @@ struct mdss_data_type {
 	struct mdss_prefill_data prefill_data;
 	bool ulps;
 	int iommu_ref_cnt;
-#ifdef CONFIG_LGE_VSYNC_SKIP
-	char enable_skip_vsync;
-	ulong skip_value;
-	ulong weight;
-	ulong bucket;
-	ulong skip_count;
-	int skip_ratio;
-	bool skip_first;
-#endif
+
 	u64 ab[MDSS_MAX_HW_BLK];
 	u64 ib[MDSS_MAX_HW_BLK];
 };

@@ -125,7 +125,7 @@ static int lm3630_read_reg(struct i2c_client *client, u8 reg, u8 *buf)
 {
 	s32 ret;
 
-	pr_info("[LCD][DEBUG] reg: %x\n", reg);
+	pr_debug("[LCD][DEBUG] reg: %x\n", reg);
 
 	ret = i2c_smbus_read_byte_data(client, reg);
 
@@ -197,7 +197,7 @@ static void lm3630_set_main_current_level(struct i2c_client *client, int level)
 
 	mutex_unlock(&dev->bl_mutex);
 
-	pr_info("[LCD][DEBUG] %s : backlight level=%d, cal_value=%d \n",
+	pr_debug("[LCD][DEBUG] %s : backlight level=%d, cal_value=%d \n",
 				__func__, level, cal_value);
 }
 
@@ -233,7 +233,7 @@ void lm3630_backlight_on(int level)
 
 	if (backlight_status == BL_OFF) {
 
-		pr_info("%s with level %d\n", __func__, level);
+		pr_debug("%s with level %d\n", __func__, level);
 		lm3630_hw_reset();
 
 #if defined(CONFIG_MACH_MSM8226_E7WIFI) || defined(CONFIG_MACH_MSM8226_E8WIFI) || defined(CONFIG_MACH_MSM8926_E8LTE) || defined ( CONFIG_MACH_MSM8926_E7LTE_ATT_US) || defined(CONFIG_MACH_MSM8926_E7LTE_VZW_US) || defined (CONFIG_MACH_MSM8926_E7LTE_USC_US)
@@ -279,12 +279,12 @@ void lm3630_backlight_on(int level)
 #else
 		if(HW_REV_0 == hw_rev)
     	{
-    		pr_info("%s HW_REV_0\n", __func__);
+    		pr_debug("%s HW_REV_0\n", __func__);
 			lm3630_write_reg(main_lm3630_dev->client, 0x00, 0x14 /*0x14*/); /* 0x15 : enable BANK A | enable LED A */
 		}
 		else
 		{
-			pr_info("%s HW_REV_A\n", __func__);
+			pr_debug("%s HW_REV_A\n", __func__);
 			lm3630_write_reg(main_lm3630_dev->client, 0x00, 0x15 /*0x14*/); /* 0x15 : enable BANK A | enable LED A | LED2 on BANK A */
 		}
 #endif
@@ -313,7 +313,7 @@ void lm3630_backlight_off(void)
 	gpio_direction_output(gpio, 0);
 	msleep(6);
 
-	pr_info("%s\n", __func__);
+	pr_debug("%s\n", __func__);
 	return;
 }
 
@@ -387,7 +387,7 @@ static ssize_t lcd_backlight_store_level(struct device *dev,
 	level = simple_strtoul(buf, NULL, 10);
 
 	lm3630_set_main_current_level_no_mapping(client, level);
-	pr_info("[LCD][DEBUG] write %d direct to "
+	pr_debug("[LCD][DEBUG] write %d direct to "
 			"backlight register\n", level);
 
 	return count;
@@ -401,7 +401,7 @@ static int lm3630_bl_resume(struct i2c_client *client)
 
 static int lm3630_bl_suspend(struct i2c_client *client, pm_message_t state)
 {
-	pr_info("[LCD][DEBUG] %s: new state: %d\n",
+	pr_debug("[LCD][DEBUG] %s: new state: %d\n",
 			__func__, state.event);
 
 	lm3630_lcd_backlight_set_level(saved_main_lcd_level);
@@ -413,7 +413,7 @@ static ssize_t lcd_backlight_show_on_off(struct device *dev,
 {
 	int r = 0;
 
-	pr_info("%s received (prev backlight_status: %s)\n",
+	pr_debug("%s received (prev backlight_status: %s)\n",
 			__func__, backlight_status ? "ON" : "OFF");
 
 	return r;
@@ -429,12 +429,12 @@ static ssize_t lcd_backlight_store_on_off(struct device *dev,
 	if (!count)
 		return -EINVAL;
 
-	pr_info("%s received (prev backlight_status: %s)\n",
+	pr_debug("%s received (prev backlight_status: %s)\n",
 			__func__, backlight_status ? "ON" : "OFF");
 
 	on_off = simple_strtoul(buf, NULL, 10);
 
-	pr_info("[LCD][DEBUG] %d", on_off);
+	pr_debug("[LCD][DEBUG] %d", on_off);
 
 	if (on_off == 1)
 		lm3630_bl_resume(client);

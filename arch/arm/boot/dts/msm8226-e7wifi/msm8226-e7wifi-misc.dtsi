@@ -12,6 +12,10 @@
 
 &soc {
     hall-bu52061nvx {
+        compatible = "rohm,hall-bu52061nvx";
+        interrupt-parent = <&msmgpio>;
+        interrupts = <4 0x0>;
+        hallic-pouch-irq-gpio = <&msmgpio 4 0x00>;
         status = "ok";
     };
 };

@@ -866,4 +866,7 @@ void __init msm8226_init_gpiomux(void)
 #endif
 }
 
-
+u32 wcnss_rf_read_reg(u32 rf_reg_addr)
+{
+	return 0;
+}

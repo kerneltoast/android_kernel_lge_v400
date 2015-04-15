@@ -422,6 +422,11 @@ qpnp_pon_input_dispatch(struct qpnp_pon *pon, u32 pon_type)
 	if (!cfg->key_code)
 		return 0;
 
+#ifdef CONFIG_MACH_MSM8226_E7WIFI
+	if (cfg->key_code == 114)
+		return 0;
+#endif
+
 	/* check the RT status to get the current status of the line */
 	rc = spmi_ext_register_readl(pon->spmi->ctrl, pon->spmi->sid,
 				QPNP_PON_RT_STS(pon->base), &pon_rt_sts, 1);

@@ -19,52 +19,6 @@
 /include/ "msm8226-e7wifi-sound.dtsi"
 
 &soc {
-	mdss_dsi0: qcom,mdss_dsi@fd922800 {
-		compatible = "qcom,mdss-dsi-ctrl";
-		label = "MDSS DSI CTRL->0";
-		cell-index = <0>;
-		reg = 	<0xfd922800 0x1f8>,
-			<0xfd922b00 0x2b0>,
-			<0xfd828000 0x108>;
-		reg-names = "dsi_ctrl", "dsi_phy", "mmss_misc_phys";
-		qcom,mdss-fb-map = <&mdss_fb0>;
-		qcom,mdss-mdp = <&mdss_mdp>;
-		l8_dsi-supply = <&pm8226_l8>;
-		l4_mipi-supply = <&pm8226_l4>;
-		qcom,platform-enable-gpio = <&msmgpio 111 0>;
-		qcom,platform-reset-gpio = <&msmgpio 25 0>;
-		/*qcom,platform-te-gpio = <&msmgpio 24 0>;*/
-		qcom,platform-strength-ctrl = [ff 06];
-		qcom,platform-bist-ctrl = [00 00 b1 ff 00 00];
-		qcom,platform-regulator-settings = [07 09 03 00 20 00 01];
-		qcom,platform-lane-config = [00 00 00 00 00 00 00 01 97
-			00 00 00 00 05 00 00 01 97
-			00 00 00 00 0a 00 00 01 97
-			00 00 00 00 0f 00 00 01 97
-			00 c0 00 00 00 00 00 01 bb];
-		qcom,platform-supply-entry1 {
-			qcom,supply-name = "l8_dsi";
-			qcom,supply-min-voltage = <1800000>;
-			qcom,supply-max-voltage = <1800000>;
-			qcom,supply-enable-load = <100000>;
-			qcom,supply-disable-load = <100>;
-			qcom,supply-pre-on-sleep = <0>;
-			qcom,supply-post-on-sleep = <0>;
-			qcom,supply-pre-off-sleep = <0>;
-			qcom,supply-post-off-sleep = <0>;
-		};
-		qcom,platform-supply-entry2 {
-			qcom,supply-name = "l4_mipi";
-			qcom,supply-min-voltage = <1200000>;
-			qcom,supply-max-voltage = <1200000>;
-			qcom,supply-enable-load = <100000>;
-			qcom,supply-disable-load = <100>;
-			qcom,supply-pre-on-sleep = <0>;
-			qcom,supply-post-on-sleep = <20>;
-			qcom,supply-pre-off-sleep = <0>;
-			qcom,supply-post-off-sleep = <0>;
-		};
-	};
 
 	serial@f991f000 {
 		status = "disable";
@@ -131,7 +85,7 @@
 		revision = "...rev_a";
 
 		status = "ok";
-};
+	};
 };
 
 &sdcc1 {

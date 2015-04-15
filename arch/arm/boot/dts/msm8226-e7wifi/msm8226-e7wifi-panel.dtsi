@@ -14,13 +14,7 @@
 	dsi_e7_NT35521_vid_dsv: qcom,mdss_dsi_lgd_NT35521_e7_wxga_video {
 		qcom,mdss-dsi-panel-name = "NT35521 wxga with DSV video mode dsi panel";
 		qcom,mdss-dsi-panel-controller = <&mdss_dsi0>;
-		qcom,mdss-dsi-panel-type = "dsi_video_mode";
 		qcom,mdss-dsi-panel-destination = "display_1";
-		qcom,lcd_dsv_enp-gpio = <&msmgpio 111 0>;
-		qcom,lcd_dsv_enn-gpio = <&msmgpio 103 0>;
-		qcom,mdss-dsi-panel-framerate = <60>;
-		qcom,mdss-dsi-virtual-channel-id = <0>;
-		qcom,mdss-dsi-stream = <0>;
 		qcom,mdss-dsi-panel-width = <800>;
 		qcom,mdss-dsi-panel-height = <1280>;
 		qcom,mdss-dsi-h-front-porch = <32>;
@@ -34,13 +28,9 @@
 		qcom,mdss-dsi-h-right-border = <0>;
 		qcom,mdss-dsi-v-top-border = <0>;
 		qcom,mdss-dsi-v-bottom-border = <0>;
-		qcom,mdss-pan-physical-width-dimension = < 94 >;
-		qcom,mdss-pan-physical-height-dimension = < 150 >;
+		qcom,mdss-pan-physical-width-dimension = <94>;
+		qcom,mdss-pan-physical-height-dimension = <150>;
 		qcom,mdss-dsi-bpp = <24>;
-		qcom,mdss-dsi-color-order = "rgb_swap_rgb";
-		qcom,mdss-dsi-underflow-color = <0x00>;
-		qcom,mdss-dsi-border-color = <0>;
-		qcom,mdss-dsi-lp11-init =<1>;
 		qcom,mdss-dsi-on-command = [
 		39 01 00 00 00 00 05 FF AA 55 A5 80
 		15 01 00 00 00 00 02 6F 02
@@ -185,13 +175,12 @@
 		05 01 00 00 32 00 02 28 00
 		05 01 00 00 78 00 02 10 00
 		];
-		qcom,mdss-dsi-on-command-state = "dsi_lp_mode";
 		qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
-		qcom,mdss-dsi-h-sync-pulse = <0>;
-		qcom,mdss-dsi-traffic-mode = "non_burst_sync_event";
-		qcom,mdss-dsi-lane-map = "lane_map_0123";
+		qcom,mdss-dsi-traffic-mode = "burst_mode";
 		qcom,mdss-dsi-bllp-eof-power-mode;
 		qcom,mdss-dsi-bllp-power-mode;
+		qcom,mdss-dsi-te-check-enable;
+		qcom,mdss-dsi-te-using-te-pin;
 		qcom,mdss-dsi-lane-0-state;
 		qcom,mdss-dsi-lane-1-state;
 		qcom,mdss-dsi-lane-2-state;
@@ -200,11 +189,10 @@
 		qcom,mdss-dsi-t-clk-post = <0x1F>;
 		qcom,mdss-dsi-t-clk-pre = <0x2C>;
 		qcom,mdss-dsi-bl-min-level = <1>;
-		qcom,mdss-dsi-bl-max-level = <255>;
-		qcom,mdss-dsi-dma-trigger = "trigger_sw";
 		qcom,mdss-dsi-mdp-trigger = "none";
 		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
 		qcom,mdss-dsi-reset-sequence = <1 1>, <0 1>, <1 150>;
+		qcom,cont-splash-enabled;
 	};
 };
 
@@ -213,13 +201,6 @@
 		revision = "rev_a...";
 		qcom,dsi-pref-prim-pan = <&dsi_e7_NT35521_vid_dsv>;
 	};
-};
-
-&dsi_e7_NT35521_vid_dsv{
-	revision = "rev_a...";
-	qcom,cont-splash-enabled;
-	qcom,platform-enable-gpio = <0>;
-	status = "ok";
 };
 
 &soc {

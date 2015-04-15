@@ -1,0 +1,13 @@
+config MACH_LGE
+	bool
+
+menu "LGE Board Selection"
+
+config MACH_MSM8226_E7WIFI
+        depends on ARCH_MSM8226
+        select MACH_LGE
+        bool "APQ8026 E7WIFI OPEN"
+        help
+          Support for the Qualcomm APQ8026 E7 WiFi-Only device.
+
+endmenu

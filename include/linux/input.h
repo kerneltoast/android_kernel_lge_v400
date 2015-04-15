@@ -471,6 +471,8 @@ struct input_keymap_entry {
 
 #define KEY_MICMUTE		248	/* Mute / unmute the microphone */
 
+#define KEY_SIMSWITCH		249	/* Multi SIM Switch key */
+
 /* Code 255 is reserved for special needs of AT keyboard driver */
 
 #define BTN_MISC		0x100
@@ -938,7 +940,13 @@ struct input_keymap_entry {
  */
 #define MT_TOOL_FINGER		0
 #define MT_TOOL_PEN		1
+
+#ifdef CONFIG_MACH_LGE
+#define MT_TOOL_PALM		2
+#define MT_TOOL_MAX		2
+#else
 #define MT_TOOL_MAX		1
+#endif
 
 /*
  * Values describing the status of a force-feedback effect

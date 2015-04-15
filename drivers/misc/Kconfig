@@ -665,6 +665,13 @@ config TI_DRV2667
 	  To compile this driver as a module, choose M here: the
 	  module will be called ti_drv2667.
 
+config BU52061NVX
+       tristate "Cradle BU52061NVX support"
+       default n
+       help
+         This option enable device driver support for the cradle
+         on the PM8XXX chips. The cradle is controlled using the PM8XXX gpio
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"

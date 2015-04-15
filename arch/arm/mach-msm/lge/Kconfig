@@ -11,3 +11,9 @@ config MACH_MSM8226_E7WIFI
           Support for the Qualcomm APQ8026 E7 WiFi-Only device.
 
 endmenu
+
+config LGE_PM_BATTERY_CAPACITY_4000mAh
+        bool "Support Battery Capacity : 4000mAh"
+        depends on LGE_PM_BATTERY_PROFILE_DATA
+        help
+          LGE battery capacity for 4000mAh

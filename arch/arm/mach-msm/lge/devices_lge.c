@@ -599,9 +599,7 @@ static int __init lge_uart_mode(char *uart_mode)
 }
 __setup("uart_console=", lge_uart_mode);
 
-#ifdef CONFIG_LGE_PM_CHARGING_CHARGERLOGO
 int lge_boot_mode_for_touch = (int)LGE_BOOT_MODE_NORMAL;
-#endif
 
 static enum lge_boot_mode_type lge_boot_mode = LGE_BOOT_MODE_NORMAL;
 int __init lge_boot_mode_init(char *s)
@@ -627,9 +625,7 @@ int __init lge_boot_mode_init(char *s)
 	else
 		lge_boot_mode = LGE_BOOT_MODE_NORMAL;
 
-#ifdef CONFIG_LGE_PM_CHARGING_CHARGERLOGO
         lge_boot_mode_for_touch = (int)lge_boot_mode;
-#endif
 
 	printk("ANDROID BOOT MODE : %d %s\n", lge_boot_mode, s);
 	return 1;

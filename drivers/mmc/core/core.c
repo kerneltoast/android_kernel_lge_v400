@@ -236,9 +236,9 @@ void mmc_request_done(struct mmc_host *host, struct mmc_request *mrq)
 			mrq->done(mrq);
 	} else {
 		mmc_should_fail_request(host, mrq);
-
+#ifndef CONFIG_MACH_LGE
 		led_trigger_event(host->led, LED_OFF);
-
+#endif
 		pr_debug("%s: req done (CMD%u): %d: %08x %08x %08x %08x\n",
 			mmc_hostname(host), cmd->opcode, err,
 			cmd->resp[0], cmd->resp[1],
@@ -349,8 +349,9 @@ mmc_start_request(struct mmc_host *host, struct mmc_request *mrq)
 #endif
 	}
 	mmc_host_clk_hold(host);
+#ifndef CONFIG_MACH_LGE
 	led_trigger_event(host->led, LED_FULL);
-
+#endif
 	if (host->card && host->clk_scaling.enable) {
 		/*
 		 * Check if we need to scale the clocks. Clocks

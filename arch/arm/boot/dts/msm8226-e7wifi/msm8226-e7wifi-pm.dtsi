@@ -38,8 +38,9 @@
 	qcom,pm8226@1 {
 		qcom,vibrator@c000 {
                         status = "okay";
-                        qcom,vib-timeout-ms = <15000>;
-                        qcom,vib-vtg-level-mV = <3100>;
+			qcom,vib-timeout-ms = <15000>;
+			qcom,vib-vtg-level-mV = <1713>;
+			qcom,vib-vtg-max-mV = <1865>;
                 };
 
 		/* e7wifi model does not use leds so d300, d800 will be set to disable */

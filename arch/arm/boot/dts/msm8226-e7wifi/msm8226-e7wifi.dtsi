@@ -221,10 +221,6 @@
 };
 */
 
-&mdss_fb0 {
-	qcom,memory-reservation-size = <0x800000>; /* LGE chagne to decrease buffer size. QCT original -> 0x800000 */
-};
-
 &pm8226_adc_tm {
 	usb-id-ext-pull-up;
 	chan@39 {
